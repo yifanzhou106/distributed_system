@@ -1,26 +1,20 @@
 package event;
 
-
 import org.json.simple.JSONObject;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.util.*;
-
-import static event.EventServer.PORT;
 
 /**
  * Create events
  */
-public class EventCreaterServlet extends EventBaseServlet {
+public class EventDeleteServlet extends EventBaseServlet {
     private EventDataMap edm;
 
-
-    public EventCreaterServlet(EventDataMap edm) {
+    public EventDeleteServlet(EventDataMap edm) {
         this.edm = edm;
     }
     @Override
@@ -37,17 +31,10 @@ public class EventCreaterServlet extends EventBaseServlet {
             printRequest(request);
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
-
-            String HOST, PORT;
-            Map<String, HashMap<String, String>> nodeMap;
-            HashMap<String, String> singleNodeMap;
-            nodeMap = edm.getNodeMap();
-
             long eventid;
             long userid;
             String eventname;
             long numtickets;
-            long timestamp;
 
             String s;
             userid = (Long) readJsonObj(body, "userid");
@@ -55,28 +42,9 @@ public class EventCreaterServlet extends EventBaseServlet {
             numtickets = (Long) (readJsonObj(body, "numtickets"));
             eventid = edm.createRandomEventId();
             System.out.println(eventid);
-
-            JSONObject json = new JSONObject();
-            json.put("eventid",eventid);
-            json.put("userid",userid);
-            json.put("eventname",eventname);
-            json.put("numtickets",numtickets);
             edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
-
-            timestamp = edm.getTimeStamp();
-            json = new JSONObject();
-            json.put("eventid",eventid);
-
-            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                singleNodeMap = entry.getValue();
-                HOST = singleNodeMap.get("host");
-                PORT = singleNodeMap.get("port");
-                String url = "http://" + HOST + ":" + PORT + "/node/add";
-                sendReplicationPost(url, json.toString());
-            }
-
             response.setContentType("application/json");
-             json = new JSONObject();
+            JSONObject json = new JSONObject();
             json.put("eventid",eventid);
             s = json.toString();
             out.println(s);

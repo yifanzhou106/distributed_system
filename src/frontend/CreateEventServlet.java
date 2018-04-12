@@ -35,10 +35,13 @@ public class CreateEventServlet extends BaseServlet {
         PrintWriter out = response.getWriter();
 
         try {
-            String s = extractPostRequestBody(request);
+            String body = extractPostRequestBody(request);
+            long userid = (Long) readJsonObj(body, "userid");
+            String eventname = (String) (readJsonObj(body, "eventname"));
+            long numtickets = (Long) (readJsonObj(body, "numtickets"));
             String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/create";
             String responseS;
-            responseS = sendPost(response, url, s);
+            responseS = sendPost(response, url, body);
             out.println(responseS);
         } catch (Exception e) {
             response.setStatus(400);

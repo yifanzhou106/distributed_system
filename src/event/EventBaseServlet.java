@@ -68,9 +68,42 @@ public class EventBaseServlet extends HttpServlet {
         return parameterList;
     }
 
+    // HTTP GET request
+    protected String sendGet(HttpServletResponse httpResponse, String url) throws Exception {
+
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("User-Agent", "HTTP/1.1");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("Response Code : " + responseCode);
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer responseStr = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                responseStr.append(inputLine);
+            }
+
+            in.close();
+
+            return responseStr.toString();
+        } else
+            httpResponse.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
+
+        return "";
+    }
 
     // HTTP POST request
-    protected String sendPost(String url, String urlParameters) throws Exception {
+    protected String sendPost(HttpServletResponse httpResponse, String url, String urlParameters) throws Exception {
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -106,7 +139,37 @@ public class EventBaseServlet extends HttpServlet {
             //print result
             return response.toString();
         }
+        else
+            httpResponse.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
         return "";
+
+    }
+
+    // HTTP POST request
+    protected int sendReplicationPost( String url, String urlParameters) throws Exception {
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        //add reuqest header
+        con.setRequestMethod("POST");
+        con.setRequestProperty("User-Agent", "HTTP/1.1");
+        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        // Send post request
+        con.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(urlParameters);
+        wr.flush();
+        wr.close();
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'POST' request to URL : " + url);
+        System.out.println("Post parameters : " + urlParameters);
+        System.out.println("Response Code : " + responseCode);
+
+        return responseCode;
 
     }
 }
