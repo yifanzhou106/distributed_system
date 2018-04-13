@@ -1,7 +1,9 @@
 package event.replication;
 
 import event.EventBaseServlet;
+import event.EventDataMap;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,10 +17,10 @@ import java.util.Map;
  * Create events
  */
 public class FindNodeServlet extends EventBaseServlet {
-    private NodeMap nm;
+    private EventDataMap edm;
 
-    public FindNodeServlet(NodeMap nm) {
-        this.nm = nm;
+    public FindNodeServlet(EventDataMap edm) {
+        this.edm = edm;
     }
 
     @Override
@@ -28,9 +30,7 @@ public class FindNodeServlet extends EventBaseServlet {
         PrintWriter out = response.getWriter();
 
         String s;
-        s = nm.getNodeList();
-        if (s.equals("[]"))
-            response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
+        s = edm.getNodeList();
         response.setContentType("application/json");
         out.println(s);
 
@@ -39,27 +39,29 @@ public class FindNodeServlet extends EventBaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        printRequest(request);
         PrintWriter out = response.getWriter();
+        String s = extractPostRequestBody(request);
         String HOST, PORT;
-        Map<String, HashMap<String, String>> nodeMap;
-        HashMap<String, String> singleNodeMap;
-        nodeMap = nm.getNodeMap();
         try {
-            String s = extractPostRequestBody(request);
-            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                singleNodeMap = entry.getValue();
-                HOST = singleNodeMap.get("host");
-                PORT = singleNodeMap.get("port");
-                String url = "http://" + HOST + ":" + PORT + "/node/add";
-                int responseCode;
-                responseCode = sendReplicationPost(url, s);
-                if (responseCode == 400)
-                    response.setStatus(400);
+            JSONParser parser = new JSONParser();
+            Object jsonObj = parser.parse(s);
+            JSONObject obj = (JSONObject) jsonObj;
+            JSONObject item = (JSONObject) obj.get("follower");
+            HOST = (String) item.get("host");
+            PORT = (String) item.get("port");
+            edm.addSingleNode(HOST, PORT);
 
-                System.out.println(responseCode);
+            if (edm.isPrimary()) {
+                String path = "/nodes";
+                sendToReplic(response, edm, s, path);
+                String responseS;
+                responseS = edm.getNodeList();
+                response.setContentType("application/json");
+                out.println(responseS);
             }
-        } catch (Exception e) {
-            response.setStatus(400);
+        }catch (Exception e)
+        {
             e.printStackTrace();
         }
     }

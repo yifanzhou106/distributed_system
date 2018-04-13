@@ -23,6 +23,11 @@ public class EventDataMap {
     private HashMap<String, String> singleNodeMap;
 
     private HashSet<String> timeStampsSet;
+    private String PrimaryHost;
+    private String PrimaryPort;
+
+    private String FollowerHost;
+    private String FollowerPort;
 
     public EventDataMap() {
         eventMap = new TreeMap<>();
@@ -31,9 +36,14 @@ public class EventDataMap {
         rwl = new ReentrantReadWriteLock();
         nodelock = new ReentrantReadWriteLock();
         timestamplock = new ReentrantReadWriteLock();
-
         timeStampsSet = new HashSet<>();
+        PrimaryHost = "localhost";
+        PrimaryPort = "7000";
+
+        FollowerHost = "localhost";
+        FollowerPort = "7050";
     }
+
 
     /**
      * Create a random event id
@@ -123,7 +133,7 @@ public class EventDataMap {
      * @param tickets
      * @return
      */
-    public Boolean purchaseTacket(long eventid, long tickets) {
+    public Boolean purchaseTicket(long eventid, long tickets) {
         Boolean isSuccess = false;
         System.out.println("In purchase Tacket");
 
@@ -183,6 +193,10 @@ public class EventDataMap {
         return nodeMap;
     }
 
+    public Boolean isPrimary() {
+        return PrimaryHost.equals(FollowerHost) && PrimaryPort.equals(FollowerPort);
+    }
+
     public Boolean isTimeStampExist(String timestamp) {
         Boolean is_exist = false;
         nodelock.readLock().lock();
@@ -193,6 +207,31 @@ public class EventDataMap {
         return is_exist;
     }
 
+    public void addTimeStamp(String timestamp) {
+        timestamplock.writeLock().lock();
+        timeStampsSet.add(timestamp);
+        timestamplock.writeLock().unlock();
+
+    }
+
+    public void addSingleNode(String host, String port) {
+        nodelock.writeLock().lock();
+        singleEventMap = new HashMap();
+        String key = host + port;
+        singleNodeMap.put("host", host);
+        singleNodeMap.put("port", port);
+        nodeMap.put(key, singleNodeMap);
+        nodelock.writeLock().unlock();
+
+    }
+
+    public void removeSingleNode (String host, String port){
+        nodelock.writeLock().lock();
+        String key = host + port;
+        nodeMap.remove(key);
+        nodelock.writeLock().unlock();
+
+    }
 
     public void addNode(String jsonString) {
         String host, port, key;
@@ -201,10 +240,15 @@ public class EventDataMap {
             JSONParser parser = new JSONParser();
             Object jsonObj = parser.parse(jsonString);
             JSONObject JsonObj = (JSONObject) jsonObj;
+
+            JSONObject primary = (JSONObject) JsonObj.get("primary");
             JSONArray eventNode = (JSONArray) JsonObj.get("eventnode");
             JSONArray frontEndNode = (JSONArray) JsonObj.get("frontendnode");
             JSONArray eventMap = (JSONArray) JsonObj.get("eventmap");
             JSONArray timestamps = (JSONArray) JsonObj.get("timestamps");
+
+            PrimaryHost = (String) primary.get("host");
+            PrimaryPort = (String) primary.get("port");
 
             nodelock.writeLock().lock();
             for (int i = 0; i < eventNode.size(); i++) {
@@ -268,21 +312,21 @@ public class EventDataMap {
         JSONObject item = new JSONObject();
         for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
             String key = entry.getKey();
-            item = getNodeInfo(key);
+            item = getNodeInfo(nodeMap, key);
             jsonArray.add(item);
         }
-        obj.put("eventnode",jsonArray);
+        obj.put("eventnode", jsonArray);
         nodelock.readLock().unlock();
 
         nodelock.readLock().lock();
-         jsonArray = new JSONArray();
-         item = new JSONObject();
+        jsonArray = new JSONArray();
+        item = new JSONObject();
         for (Map.Entry<String, HashMap<String, String>> entry : frontEndMap.entrySet()) {
             String key = entry.getKey();
-            item = getFrontEndNodeInfo(key);
+            item = getNodeInfo(frontEndMap, key);
             jsonArray.add(item);
         }
-        obj.put("frontendnode",jsonArray);
+        obj.put("frontendnode", jsonArray);
         nodelock.readLock().unlock();
 
         timestamplock.readLock().lock();
@@ -291,52 +335,87 @@ public class EventDataMap {
         Iterator iterator = timeStampsSet.iterator();
 
         while (iterator.hasNext()) {
-           item.put("timestamp",iterator.next());
+            item.put("timestamp", iterator.next());
             jsonArray.add(item);
         }
-        obj.put("timestamps",jsonArray);
-
+        obj.put("timestamps", jsonArray);
         timestamplock.readLock().unlock();
 
-
+        item = toNodeJsonObject(PrimaryHost, PrimaryPort);
+        obj.put("primary", item);
 
         return obj.toString();
     }
 
-    public JSONObject getNodeInfo(String key) {
+    public String getFollowerJsonString() {
+        JSONObject obj = new JSONObject();
+        JSONObject item = new JSONObject();
+        item = toNodeJsonObject(FollowerHost, FollowerPort);
+        obj.put("follower", item);
+        return obj.toString();
+    }
+
+    public String getPrimaryJsonString() {
+        JSONObject obj = new JSONObject();
+        JSONObject item = new JSONObject();
+        item = toNodeJsonObject(PrimaryHost, PrimaryPort);
+        obj.put("primary", item);
+        return obj.toString();
+    }
+
+    public JSONObject getNodeInfo(Map<String, HashMap<String, String>> nodeMap, String key) {
         JSONObject s = new JSONObject();
-        rwl.readLock().lock();
+        nodelock.readLock().lock();
         if (nodeMap.containsKey(key)) {
             String host, port;
             singleNodeMap = nodeMap.get(key);
             host = singleNodeMap.get("host");
             port = singleNodeMap.get("port");
 
-            s = toJsonObject(host, port);
+            s = toNodeJsonObject(host, port);
         }
-        rwl.readLock().unlock();
+        nodelock.readLock().unlock();
         return s;
     }
 
-    public JSONObject getFrontEndNodeInfo(String key) {
-        JSONObject s = new JSONObject();
-        rwl.readLock().lock();
-        if (frontEndMap.containsKey(key)) {
-            String host, port;
-            singleNodeMap = frontEndMap.get(key);
-            host = singleNodeMap.get("host");
-            port = singleNodeMap.get("port");
 
-            s = toJsonObject(host, port);
-        }
-        rwl.readLock().unlock();
-        return s;
-    }
-
-    public JSONObject toJsonObject(String host, String port) {
+    public JSONObject toNodeJsonObject(String host, String port) {
         JSONObject json = new JSONObject();
         json.put("host", host);
         json.put("port", port);
         return json;
+    }
+
+
+    public void setFollowerHost(String followerHost) {
+        FollowerHost = followerHost;
+    }
+
+    public void setFollowerPort(String followerPort) {
+        FollowerPort = followerPort;
+    }
+
+    public void setPrimaryHost(String primaryHost) {
+        PrimaryHost = primaryHost;
+    }
+
+    public void setPrimaryPort(String primaryPort) {
+        PrimaryPort = primaryPort;
+    }
+
+    public String getFollowerPort() {
+        return FollowerPort;
+    }
+
+    public String getFollowerHost() {
+        return FollowerHost;
+    }
+
+    public String getPrimaryHost() {
+        return PrimaryHost;
+    }
+
+    public String getPrimaryPort() {
+        return PrimaryPort;
     }
 }

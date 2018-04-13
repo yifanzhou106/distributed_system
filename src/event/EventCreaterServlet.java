@@ -2,6 +2,7 @@ package event;
 
 
 import org.json.simple.JSONObject;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -23,6 +24,7 @@ public class EventCreaterServlet extends EventBaseServlet {
     public EventCreaterServlet(EventDataMap edm) {
         this.edm = edm;
     }
+
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -30,6 +32,7 @@ public class EventCreaterServlet extends EventBaseServlet {
         response.setStatus(400);
 
     }
+
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -38,48 +41,43 @@ public class EventCreaterServlet extends EventBaseServlet {
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
 
-            String HOST, PORT;
-            Map<String, HashMap<String, String>> nodeMap;
-            HashMap<String, String> singleNodeMap;
-            nodeMap = edm.getNodeMap();
-
             long eventid;
             long userid;
             String eventname;
             long numtickets;
-            long timestamp;
+            String timestamp;
+            String s = "";
 
-            String s;
             userid = (Long) readJsonObj(body, "userid");
             eventname = (String) (readJsonObj(body, "eventname"));
             numtickets = (Long) (readJsonObj(body, "numtickets"));
-            eventid = edm.createRandomEventId();
-            System.out.println(eventid);
+            timestamp = (String) (readJsonObj(body, "timestamp"));
 
-            JSONObject json = new JSONObject();
-            json.put("eventid",eventid);
-            json.put("userid",userid);
-            json.put("eventname",eventname);
-            json.put("numtickets",numtickets);
-            edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
+            if (!edm.isTimeStampExist(timestamp)) {
+                edm.addTimeStamp(timestamp);
 
-            timestamp = edm.getTimeStamp();
-            json = new JSONObject();
-            json.put("eventid",eventid);
+                JSONObject json = new JSONObject();
+                if (edm.isPrimary()) {
+                    eventid = edm.createRandomEventId();
+                    System.out.println(eventid);
+                    json.put("eventid", eventid);
+                    json.put("userid", userid);
+                    json.put("eventname", eventname);
+                    json.put("numtickets", numtickets);
+                    json.put("timestamp", timestamp);
+                    String path = "/create";
+                    sendToReplic(response, edm, json.toString(), path);
 
-            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                singleNodeMap = entry.getValue();
-                HOST = singleNodeMap.get("host");
-                PORT = singleNodeMap.get("port");
-                String url = "http://" + HOST + ":" + PORT + "/node/add";
-                sendReplicationPost(url, json.toString());
+                    response.setContentType("application/json");
+                    json = new JSONObject();
+                    json.put("eventid", eventid);
+                    s = json.toString();
+                } else {
+                    eventid = (Long) readJsonObj(body, "eventid");
+                }
+                edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
+                out.println(s);
             }
-
-            response.setContentType("application/json");
-             json = new JSONObject();
-            json.put("eventid",eventid);
-            s = json.toString();
-            out.println(s);
 
 
         } catch (Exception e) {

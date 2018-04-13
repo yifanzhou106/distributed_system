@@ -102,6 +102,25 @@ public class EventBaseServlet extends HttpServlet {
         return "";
     }
 
+    // HTTP GET request
+    public int sendGet( String url) throws Exception {
+
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("User-Agent", "HTTP/1.1");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("Response Code : " + responseCode);
+
+        return responseCode;
+    }
+
     // HTTP POST request
     protected String sendPost(HttpServletResponse httpResponse, String url, String urlParameters) throws Exception {
 
@@ -145,31 +164,31 @@ public class EventBaseServlet extends HttpServlet {
 
     }
 
-    // HTTP POST request
-    protected int sendReplicationPost( String url, String urlParameters) throws Exception {
 
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        //add reuqest header
-        con.setRequestMethod("POST");
-        con.setRequestProperty("User-Agent", "HTTP/1.1");
-        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-        con.setRequestProperty("Content-Type", "application/json");
-
-        // Send post request
-        con.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-        wr.writeBytes(urlParameters);
-        wr.flush();
-        wr.close();
-
-        int responseCode = con.getResponseCode();
-        System.out.println("\nSending 'POST' request to URL : " + url);
-        System.out.println("Post parameters : " + urlParameters);
-        System.out.println("Response Code : " + responseCode);
-
-        return responseCode;
-
+    protected void sendToReplic (HttpServletResponse response, EventDataMap edm,String s, String path)
+    {
+        Map<String, HashMap<String, String>> nodeMap;
+        HashMap<String, String> singleNodeMap;
+        String host, port;
+        nodeMap = edm.getNodeMap();
+        try {
+            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
+                singleNodeMap = entry.getValue();
+                host = singleNodeMap.get("host");
+                port = singleNodeMap.get("port");
+                String url = "http://" + host + ":" + port + path;
+                try {
+                    sendPost(response, url, s);
+                }
+                catch (Exception e)
+                {
+                    System.out.println("\nCan not connect to " + url);
+                                  }
+            }
+        } catch (Exception e) {
+            response.setStatus(400);
+            e.printStackTrace();
+        }
     }
+
 }
