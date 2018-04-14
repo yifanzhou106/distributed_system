@@ -4,6 +4,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -37,11 +39,18 @@ public class EventDataMap {
         nodelock = new ReentrantReadWriteLock();
         timestamplock = new ReentrantReadWriteLock();
         timeStampsSet = new HashSet<>();
-        PrimaryHost = "localhost";
-        PrimaryPort = "7000";
 
-        FollowerHost = "localhost";
-        FollowerPort = "7050";
+        try {
+//            PrimaryHost = InetAddress.getLocalHost().toString();
+            PrimaryHost = "localhost";
+            PrimaryPort = "7000";
+//            FollowerHost = InetAddress.getLocalHost().toString();
+            FollowerHost = "localhost";
+            FollowerPort = "7050";
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
 
@@ -89,7 +98,7 @@ public class EventDataMap {
      *
      * @return
      */
-    public String getEventList() {
+    public JSONArray getEventList() {
         rwl.readLock().lock();
         JSONArray jsonArray = new JSONArray();
         JSONObject item = new JSONObject();
@@ -100,7 +109,7 @@ public class EventDataMap {
         }
         rwl.readLock().unlock();
 
-        return jsonArray.toString();
+        return jsonArray;
     }
 
     /**
@@ -190,10 +199,25 @@ public class EventDataMap {
     }
 
     public Map<String, HashMap<String, String>> getNodeMap() {
-        return nodeMap;
+        nodelock.readLock().lock();
+        Map<String, HashMap<String, String>> nodemap = nodeMap;
+        nodelock.readLock().unlock();
+
+        return nodemap;
+    }
+
+    public Map<String, HashMap<String, String>> getFrontEndMap() {
+        nodelock.readLock().lock();
+        Map<String, HashMap<String, String>> nodemap = frontEndMap;
+        nodelock.readLock().unlock();
+
+        return nodemap;
     }
 
     public Boolean isPrimary() {
+        System.out.println("Primary: "+ PrimaryHost+PrimaryPort);
+        System.out.println("I am: "+FollowerHost+FollowerPort);
+
         return PrimaryHost.equals(FollowerHost) && PrimaryPort.equals(FollowerPort);
     }
 
@@ -216,11 +240,21 @@ public class EventDataMap {
 
     public void addSingleNode(String host, String port) {
         nodelock.writeLock().lock();
-        singleEventMap = new HashMap();
+        singleNodeMap = new HashMap();
         String key = host + port;
         singleNodeMap.put("host", host);
         singleNodeMap.put("port", port);
         nodeMap.put(key, singleNodeMap);
+        nodelock.writeLock().unlock();
+
+    }
+    public void addSingleFrontendNode(String host, String port) {
+        nodelock.writeLock().lock();
+        singleNodeMap = new HashMap();
+        String key = host + port;
+        singleNodeMap.put("host", host);
+        singleNodeMap.put("port", port);
+        frontEndMap.put(key, singleNodeMap);
         nodelock.writeLock().unlock();
 
     }
@@ -306,9 +340,14 @@ public class EventDataMap {
 
     public String getNodeList() {
         JSONObject obj = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+        rwl.readLock().lock();
+        jsonArray = getEventList();
+        obj.put("eventmap", jsonArray);
+        rwl.readLock().unlock();
 
         nodelock.readLock().lock();
-        JSONArray jsonArray = new JSONArray();
+        jsonArray = new JSONArray();
         JSONObject item = new JSONObject();
         for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
             String key = entry.getKey();

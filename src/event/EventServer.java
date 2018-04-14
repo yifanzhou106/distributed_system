@@ -1,5 +1,6 @@
 package event;
 
+import event.replication.AddEventNodeServlet;
 import event.replication.FindNodeServlet;
 import event.replication.NodeElectionServlet;
 import org.apache.logging.log4j.LogManager;
@@ -12,10 +13,13 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
 import event.EventBaseServlet;
 
 /**
@@ -26,37 +30,26 @@ import event.EventBaseServlet;
 public class EventServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 5650;
+    public static int PORT = 8000;
     static int USER_PORT = 2000;
     static String USER_HOST = "mc01";
     private EventDataMap edm;
-    public EventServer(){
+
+    public EventServer() {
         edm = new EventDataMap();
-        Thread heartBeat = new Thread(new HeartBeatMessage(edm));
-        heartBeat.start();
+
     }
 
     public static void main(String[] args) {
-
+        if (args.length > 0)
+            if (args[0].equals("-port")) {
+                PORT = Integer.parseInt(args[1]);
+            }
         // Needs host,port input
         EventServer es = new EventServer();
         Server server = new Server(PORT);
-        es.edm.setFollowerHost(HOST);
-        es.edm.setFollowerPort(String.valueOf(PORT));
-
-        try {
-            String responseS;
-            String url = "http://localhost:7000/nodes";
-            String s;
-            s = es.edm.getFollowerJsonString();
-            responseS = es.sendReplicationPost(url,s);
-            es.edm.addNode(responseS);
-            System.out.println(responseS);
-
-        }catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        es.tellThemIamOn();
+        Thread heartBeat = new Thread(new HeartBeatMessage(es.edm));
 
         ServletHandler handler = new ServletHandler();
         server.setHandler(handler);
@@ -65,6 +58,8 @@ public class EventServer {
         handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm)), "/purchase/*");
         handler.addServletWithMapping(new ServletHolder(new FindNodeServlet(es.edm)), "/nodes");
         handler.addServletWithMapping(new ServletHolder(new EventAddServlet(es.edm)), "/nodes/add");
+        handler.addServletWithMapping(new ServletHolder(new AddEventNodeServlet(es.edm)), "/nodes/add/frontend");
+
         handler.addServletWithMapping(new ServletHolder(new NodeElectionServlet(es.edm)), "/nodes/election");
 
 
@@ -76,6 +71,7 @@ public class EventServer {
 
         try {
             server.start();
+            heartBeat.start();
             server.join();
 
             log.info("Exiting...");
@@ -85,8 +81,28 @@ public class EventServer {
         }
     }
 
+    public void tellThemIamOn() {
+        try {
+//            HOST = InetAddress.getLocalHost().toString();
+            HOST = "localhost";
+            edm.setFollowerHost(HOST);
+            edm.setFollowerPort(String.valueOf(PORT));
+            String responseS;
+            String url = "http://localhost:7000/nodes";
+            String s;
+            s = edm.getFollowerJsonString();
+            responseS = sendReplicationPost(url, s);
+            edm.addNode(responseS);
+            System.out.println(responseS);
+
+        } catch (Exception e) {
+            System.out.println("Cannot connect to primary");
+        }
+
+    }
+
     // HTTP GET request
-    public String sendGet( String url) throws Exception {
+    public String sendGet(String url) throws Exception {
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -118,7 +134,7 @@ public class EventServer {
     }
 
     // HTTP POST request
-    public String sendReplicationPost( String url, String urlParameters) throws Exception {
+    public String sendReplicationPost(String url, String urlParameters) throws Exception {
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();

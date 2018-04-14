@@ -33,7 +33,7 @@ public class EventGetterServlet extends EventBaseServlet {
             printRequest(request);
             String s;
             if (eventid.equals("list")) {
-                s = edm.getEventList();
+                s = edm.getEventList().toString();
             } else {
                 s = edm.getEventInfo(Long.parseLong(eventid)).toString();
             }

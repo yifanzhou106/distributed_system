@@ -103,7 +103,7 @@ public class EventBaseServlet extends HttpServlet {
     }
 
     // HTTP GET request
-    public int sendGet( String url) throws Exception {
+    public int sendGet(String url) throws Exception {
 
 
         URL obj = new URL(url);
@@ -157,16 +157,14 @@ public class EventBaseServlet extends HttpServlet {
 
             //print result
             return response.toString();
-        }
-        else
+        } else
             httpResponse.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
         return "";
 
     }
 
 
-    protected void sendToReplic (HttpServletResponse response, EventDataMap edm,String s, String path)
-    {
+    protected void sendToReplic(HttpServletResponse response, EventDataMap edm, String s, String path) {
         Map<String, HashMap<String, String>> nodeMap;
         HashMap<String, String> singleNodeMap;
         String host, port;
@@ -177,13 +175,35 @@ public class EventBaseServlet extends HttpServlet {
                 host = singleNodeMap.get("host");
                 port = singleNodeMap.get("port");
                 String url = "http://" + host + ":" + port + path;
+                System.out.println("Sending replic to "+ url);
                 try {
                     sendPost(response, url, s);
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     System.out.println("\nCan not connect to " + url);
-                                  }
+                }
+            }
+        } catch (Exception e) {
+            response.setStatus(400);
+            e.printStackTrace();
+        }
+    }
+
+    protected void sendToFrontend(HttpServletResponse response, EventDataMap edm, String s, String path) {
+        Map<String, HashMap<String, String>> nodeMap;
+        HashMap<String, String> singleNodeMap;
+        String host, port;
+        nodeMap = edm.getFrontEndMap();
+        try {
+            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
+                singleNodeMap = entry.getValue();
+                host = singleNodeMap.get("host");
+                port = singleNodeMap.get("port");
+                String url = "http://" + host + ":" + port + path;
+                try {
+                    sendPost(response, url, s);
+                } catch (Exception e) {
+                    System.out.println("\nCan not connect to " + url);
+                }
             }
         } catch (Exception e) {
             response.setStatus(400);

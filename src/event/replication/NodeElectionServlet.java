@@ -60,6 +60,9 @@ public class NodeElectionServlet extends EventBaseServlet {
                 edm.setPrimaryPort(port);
                 String s =edm.getPrimaryJsonString();
                 sendToReplic(response,edm,s,path);
+                path ="/nodes";
+                sendToFrontend(response,edm,s,path);
+
             }
         } catch (Exception e) {
             e.printStackTrace();

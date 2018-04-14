@@ -9,24 +9,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Create events
  */
-public class FindNodeServlet extends EventBaseServlet {
+public class AddEventNodeServlet extends EventBaseServlet {
     private EventDataMap edm;
 
-    public FindNodeServlet(EventDataMap edm) {
+    public AddEventNodeServlet(EventDataMap edm) {
         this.edm = edm;
     }
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-//        printRequest(request);
+        printRequest(request);
     }
 
     @Override
@@ -35,21 +32,18 @@ public class FindNodeServlet extends EventBaseServlet {
         printRequest(request);
         PrintWriter out = response.getWriter();
         String s = extractPostRequestBody(request);
-        System.out.println("\nNew Event Node is "+s);
         String HOST, PORT;
         try {
             JSONParser parser = new JSONParser();
             Object jsonObj = parser.parse(s);
             JSONObject obj = (JSONObject) jsonObj;
-            JSONObject item = (JSONObject) obj.get("follower");
+            JSONObject item = (JSONObject) obj.get("frontend");
             HOST = (String) item.get("host");
             PORT = (String) item.get("port");
-            System.out.println(HOST+PORT);
-            edm.addSingleNode(HOST, PORT);
-            System.out.println("\nAdd Event node successfully "+s);
+            edm.addSingleFrontendNode(HOST, PORT);
 
             if (edm.isPrimary()) {
-                String path = "/nodes";
+                String path = "/nodes/add/frontend";
                 sendToReplic(response, edm, s, path);
                 String responseS;
                 responseS = edm.getNodeList();

@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URL;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -147,6 +148,13 @@ public class BaseServlet extends HttpServlet {
 
         return "";
 
+    }
+
+    protected String getTimeStamp(String Host, String Port) {
+        String timestamp;
+        Timestamp time = new Timestamp(System.currentTimeMillis());
+        timestamp = Host + Port + time.getTime();
+        return timestamp;
     }
 
 }
