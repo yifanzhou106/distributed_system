@@ -1,4 +1,7 @@
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
@@ -41,7 +44,7 @@ public class test {
     public void beginChat() {
             for (int i = 0; i <1000; i++)
                 threads.submit(new sendGetMessage());
-        list();
+//        list();
 
     }
 
@@ -58,10 +61,10 @@ public class test {
     public class sendGetMessage implements Runnable {
         @Override
         public void run () {
-//            create();
-            purchase();
-            list();
-
+            create();
+//            purchase();
+//            list();
+//            createPurchase ();
 //            createEvent();
 //            purchaseEvent();
     }
@@ -77,6 +80,25 @@ public class test {
             System.out.println(e);
         }
     }
+        void createPurchase (){
+            try {
+                String url = "http://" + HOST + ":" + PORT + "/events/create";
+                String s = "{\"userid\":1001, \"eventname\":\"Dinner\", \"numtickets\": 20}";
+                String response = sendPost(url, s);
+                System.out.println(response);
+                JSONParser parser = new JSONParser();
+                Object jsonObj = parser.parse(response);
+                JSONObject jsonObject = (JSONObject) jsonObj;
+                long eventid =(Long) jsonObject.get("eventid");
+                url = "http://" + HOST + ":" + PORT + "/events/"+ eventid +"/purchase/34";
+                s = "{\"tickets\":1}";
+                System.out.println(sendPost(url, s));
+            }
+            catch (Exception e)
+            {
+                System.out.println(e);
+            }
+        }
         void createEvent (){
             try {
                 String url = "http://" + HOST + ":" + PORT + "/create";
@@ -91,7 +113,7 @@ public class test {
 
         void purchase (){
             try {
-                String url = "http://" + HOST + ":" + PORT + "/events/"+54 +"/purchase/34";
+                String url = "http://" + HOST + ":" + PORT + "/events/"+214 +"/purchase/34";
                 String s = "{\"tickets\":1}";
                 System.out.println(sendPost(url, s));
             }

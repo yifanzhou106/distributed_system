@@ -68,8 +68,8 @@ public class EventPurchaseServlet extends EventBaseServlet {
                         s = json.toString();
                         System.out.println(s);
                         String responseS;
-                        responseS = sendPost(response, url, s);
-                        out.println(responseS);
+//                        responseS = sendPost(response, url, s);
+//                        out.println(responseS);
                     } else {
                         System.out.println("Purchase Unsuccessfully\n");
                         response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);

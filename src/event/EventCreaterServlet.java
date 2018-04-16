@@ -28,7 +28,6 @@ public class EventCreaterServlet extends EventBaseServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         response.setStatus(400);
 
     }
@@ -37,16 +36,14 @@ public class EventCreaterServlet extends EventBaseServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         try {
-            printRequest(request);
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
-
+            System.out.println("json: "+body);
             long eventid;
             long userid;
             String eventname;
             long numtickets;
             String timestamp;
-            String s = "";
 
             userid = (Long) readJsonObj(body, "userid");
             eventname = (String) (readJsonObj(body, "eventname"));
@@ -71,12 +68,18 @@ public class EventCreaterServlet extends EventBaseServlet {
                     response.setContentType("application/json");
                     json = new JSONObject();
                     json.put("eventid", eventid);
-                    s = json.toString();
+                    json.put("timestamp", timestamp);
+                    body = json.toString();
                 } else {
                     eventid = (Long) readJsonObj(body, "eventid");
                 }
+                System.out.println("Create a new event: "+ body);
                 edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
-                out.println(s);
+                out.println(body);
+            }
+            else
+            {
+                System.out.println("\nRepeat Time Stamp "+ body);
             }
 
 

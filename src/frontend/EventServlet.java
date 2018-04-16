@@ -9,8 +9,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-import static frontend.FrontEndServer.EVENT_HOST;
-import static frontend.FrontEndServer.EVENT_PORT;
+import static frontend.FrontEndServer.*;
 
 /**
  * Handle with Events
@@ -76,12 +75,14 @@ public class EventServlet extends BaseServlet {
             if (parameterList.size() == 2) {
                 eventid = parameterList.get(0);
                 userid = parameterList.get(1);
+                String timestamp = getTimeStamp(HOST, PORT);
 
                 long tickets = (Long) readJsonObj(body, "tickets");
                 JSONObject json = new JSONObject();
                 json.put("userid", Long.parseLong(userid));
                 json.put("eventid", Long.parseLong(eventid));
                 json.put("tickets", tickets);
+                json.put("timestamp", timestamp);
 
                 s = json.toString();
                 url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/purchase/" + eventid;

@@ -1,6 +1,6 @@
 package event;
 
-import event.replication.AddEventNodeServlet;
+import event.replication.AddFrontEndNodeServlet;
 import event.replication.FindNodeServlet;
 import event.replication.NodeElectionServlet;
 import org.apache.logging.log4j.LogManager;
@@ -15,12 +15,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
 
-import event.EventBaseServlet;
 
 /**
  * Demonstrates simple user registration, login, and session tracking. This
@@ -30,7 +25,7 @@ import event.EventBaseServlet;
 public class EventServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 8000;
+    public static int PORT = 7000;
     static int USER_PORT = 2000;
     static String USER_HOST = "mc01";
     private EventDataMap edm;
@@ -58,8 +53,7 @@ public class EventServer {
         handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm)), "/purchase/*");
         handler.addServletWithMapping(new ServletHolder(new FindNodeServlet(es.edm)), "/nodes");
         handler.addServletWithMapping(new ServletHolder(new EventAddServlet(es.edm)), "/nodes/add");
-        handler.addServletWithMapping(new ServletHolder(new AddEventNodeServlet(es.edm)), "/nodes/add/frontend");
-
+        handler.addServletWithMapping(new ServletHolder(new AddFrontEndNodeServlet(es.edm)), "/nodes/add/frontend");
         handler.addServletWithMapping(new ServletHolder(new NodeElectionServlet(es.edm)), "/nodes/election");
 
 
@@ -87,6 +81,7 @@ public class EventServer {
             HOST = "localhost";
             edm.setFollowerHost(HOST);
             edm.setFollowerPort(String.valueOf(PORT));
+//            edm.addSingleNode(HOST,String.valueOf(PORT));
             String responseS;
             String url = "http://localhost:7000/nodes";
             String s;

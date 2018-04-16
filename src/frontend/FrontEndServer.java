@@ -1,6 +1,6 @@
 package frontend;
 
-import event.replication.FindNodeServlet;
+import frontend.replication.UpdatePrimaryNodeServlet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Server;
@@ -23,8 +23,8 @@ import java.net.URL;
  */
 public class FrontEndServer {
     protected static Logger log = LogManager.getLogger();
-    private static String HOST;
-    private static int PORT = 5600;
+    public static String HOST ="localhost";
+    public static int PORT = 5600;
     public static volatile int EVENT_PORT = 7000;
     public static volatile String EVENT_HOST = "localhost";
     static int USER_PORT = 2000;
@@ -54,7 +54,7 @@ public class FrontEndServer {
         context.addServlet(EventServlet.class, "/events");
         context.addServlet(CreateEventServlet.class, "/events/create");
         context.addServlet(EventServlet.class, "/events/*");
-        context.addServlet(FindNodeServlet.class, "/nodes");
+        context.addServlet(UpdatePrimaryNodeServlet.class, "/nodes");
 
         context.addServlet(OtherServlet.class, "/*");
 
@@ -77,15 +77,15 @@ public class FrontEndServer {
     public void tellThemIamOn()
     {
         try {
-            HOST = InetAddress.getLocalHost().toString();
-            System.out.println("Host is "+HOST);
+//            HOST = InetAddress.getLocalHost().toString();
+            HOST = "localhost";
             String responseS;
             String url = "http://localhost:7000/nodes/add/frontend";
             String s;
             JSONObject obj = new JSONObject();
             JSONObject item = new JSONObject();
             item.put("host", HOST);
-            item.put("port", PORT);
+            item.put("port", String.valueOf(PORT));
             obj.put("frontend", item);
             s = obj.toString();
             responseS = sendPost(url,s);

@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class HeartBeatMessage implements Runnable {
     private EventDataMap edm;
-    Boolean FLAG = false;
+    private Boolean FLAG = false;
 
     public HeartBeatMessage(EventDataMap edm) {
         this.edm = edm;
@@ -27,7 +27,7 @@ public class HeartBeatMessage implements Runnable {
         String path = "/nodes";
         try {
             while (!FLAG) {
-                sendToReplic(edm, path);
+                checkAlive(edm, path);
                 Thread.sleep(3000);
             }
         } catch (InterruptedException e) {
@@ -48,37 +48,25 @@ public class HeartBeatMessage implements Runnable {
         con.setRequestProperty("Content-Type", "application/json");
 
         int responseCode = con.getResponseCode();
-        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("\nChecking Server: " + url);
         System.out.println("Response Code : " + responseCode);
 
         return responseCode;
     }
 
-    private void sendToReplic(EventDataMap edm, String path) {
+    private void checkAlive(EventDataMap edm, String path) {
         Map<String, HashMap<String, String>> nodeMap;
         HashMap<String, String> singleNodeMap;
         String host, port;
         if (edm.isPrimary()) {
             nodeMap = edm.getNodeMap();
-            try {
-                for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                    singleNodeMap = entry.getValue();
-                    host = singleNodeMap.get("host");
-                    port = singleNodeMap.get("port");
+            sendToReplic(nodeMap, path);
+            System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
+            nodeMap = edm.getFrontEndMap();
+            sendToReplic(nodeMap, path);
+            System.out.println("\nTotal alive Frontend Server List: " + edm.getFrontendNodeList().toString());
 
-                    String url = "http://" + host + ":" + port + path;
-                    try {
-                        sendGet(url);
-                    } catch (Exception e) {
-                        System.out.println("\nCan not connect to " + url);
-                        System.out.println("\nRemoving " + url);
-                        edm.removeSingleNode(host, port);
-                        System.out.println("\nRemove successfully");
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
         } else {
             host = edm.getPrimaryHost();
             port = edm.getPrimaryPort();
@@ -86,45 +74,46 @@ public class HeartBeatMessage implements Runnable {
             try {
                 sendGet(url);
             } catch (Exception e) {
-                System.out.println("\nCan not connect to primary,Begin election");
+                System.out.println("\nCan not connect to primary, Begin election");
                 String followerHost, followerPort;
+                path = "/nodes/election";
+
                 followerHost = edm.getFollowerHost();
                 followerPort = edm.getFollowerPort();
-                beginElection(followerHost,followerPort);
-
-            }
-        }
-    }
-
-
-    private void beginElection(String host, String port) {
-        Map<String, HashMap<String, String>> nodeMap;
-        HashMap<String, String> singleNodeMap;
-        nodeMap = edm.getNodeMap();
-        String followerHost, followerPort;
-        String key = host + port;
-        String path = "/nodes/election";
-        Boolean canBePrimary = true;
-        for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-            if (key.compareToIgnoreCase(entry.getKey())<0) {
-                singleNodeMap = entry.getValue();
-                followerHost = singleNodeMap.get("host");
-                followerPort = singleNodeMap.get("port");
-                String url = "http://" + followerHost + ":" + followerPort + path;
+                url = "http://" + followerHost + ":" + followerPort + path;
                 try {
-                   if (sendGet(url)==200)
-                       canBePrimary=false;
-                }catch(Exception e)
-                {
-                    System.out.println("\nCan not connect to " + url);
+                    sendGet(url);
+                } catch (Exception ex) {
+                    System.out.println("\ncannot connect itself");
                 }
             }
-        }
-        if (canBePrimary)
-        {
+            System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
 
         }
     }
 
+    private void sendToReplic(Map<String, HashMap<String, String>> nodeMap, String path) {
+        HashMap<String, String> singleNodeMap;
+        String host, port;
+        try {
+            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
+                singleNodeMap = entry.getValue();
+                host = singleNodeMap.get("host");
+                port = singleNodeMap.get("port");
+
+                String url = "http://" + host + ":" + port + path;
+                try {
+                    sendGet(url);
+                } catch (Exception e) {
+                    System.out.println("\nCan not connect to " + url);
+                    System.out.println("\nRemoving " + url);
+                    edm.removeSingleNode(host, port);
+                    System.out.println("\nRemove successfully");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 

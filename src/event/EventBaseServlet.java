@@ -169,13 +169,15 @@ public class EventBaseServlet extends HttpServlet {
         HashMap<String, String> singleNodeMap;
         String host, port;
         nodeMap = edm.getNodeMap();
+        edm.Queue(s);
+        s = edm.Dequeue();
         try {
             for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
                 singleNodeMap = entry.getValue();
                 host = singleNodeMap.get("host");
                 port = singleNodeMap.get("port");
                 String url = "http://" + host + ":" + port + path;
-                System.out.println("Sending replic to "+ url);
+                System.out.println("Sending replic to " + url);
                 try {
                     sendPost(response, url, s);
                 } catch (Exception e) {

@@ -13,23 +13,21 @@ import java.io.PrintWriter;
 /**
  * Create events
  */
-public class AddEventNodeServlet extends EventBaseServlet {
+public class AddFrontEndNodeServlet extends EventBaseServlet {
     private EventDataMap edm;
 
-    public AddEventNodeServlet(EventDataMap edm) {
+    public AddFrontEndNodeServlet(EventDataMap edm) {
         this.edm = edm;
     }
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
     }
 
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         PrintWriter out = response.getWriter();
         String s = extractPostRequestBody(request);
         String HOST, PORT;
@@ -40,18 +38,20 @@ public class AddEventNodeServlet extends EventBaseServlet {
             JSONObject item = (JSONObject) obj.get("frontend");
             HOST = (String) item.get("host");
             PORT = (String) item.get("port");
+            System.out.println("\nAdd a new front end " + HOST + PORT);
             edm.addSingleFrontendNode(HOST, PORT);
-
+            System.out.println("\nAdd a new front end successfully");
+            System.out.println("Total alive Front End Server List: " + edm.getFrontendNodeList().toString());
             if (edm.isPrimary()) {
                 String path = "/nodes/add/frontend";
+                System.out.println("\nSending new frontend to replic");
                 sendToReplic(response, edm, s, path);
                 String responseS;
                 responseS = edm.getNodeList();
                 response.setContentType("application/json");
                 out.println(responseS);
             }
-        }catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

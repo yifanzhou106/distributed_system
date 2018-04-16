@@ -25,7 +25,7 @@ public class NodeElectionServlet extends EventBaseServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
+//        printRequest(request);
         PrintWriter out = response.getWriter();
         out.println();
 
@@ -58,10 +58,10 @@ public class NodeElectionServlet extends EventBaseServlet {
             if (canBePrimary) {
                 edm.setPrimaryHost(host);
                 edm.setPrimaryPort(port);
-                String s =edm.getPrimaryJsonString();
-                sendToReplic(response,edm,s,path);
-                path ="/nodes";
-                sendToFrontend(response,edm,s,path);
+                String s = edm.getPrimaryJsonString();
+                sendToReplic(response, edm, s, path);
+                path = "/nodes";
+                sendToFrontend(response, edm, s, path);
 
             }
         } catch (Exception e) {
@@ -73,22 +73,23 @@ public class NodeElectionServlet extends EventBaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
+//        printRequest(request);
         PrintWriter out = response.getWriter();
         String body = extractPostRequestBody(request);
         String HOST, PORT;
-        try{
+        try {
             JSONParser parser = new JSONParser();
             Object jsonObj = parser.parse(body);
             JSONObject jsonObject = (JSONObject) jsonObj;
-            JSONObject item = (JSONObject)jsonObject.get("primary");
+            JSONObject item = (JSONObject) jsonObject.get("primary");
             HOST = (String) item.get("host");
             PORT = (String) item.get("port");
+            System.out.println("\nElection Finished");
+            System.out.println("\nNow primary is "+HOST+PORT);
             edm.setPrimaryHost(HOST);
             edm.setPrimaryPort(PORT);
             out.println();
-        }catch(Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

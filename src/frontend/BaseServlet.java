@@ -1,20 +1,15 @@
 package frontend;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.net.HttpURLConnection;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URL;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+
 import java.util.*;
 
 /**
@@ -150,10 +145,10 @@ public class BaseServlet extends HttpServlet {
 
     }
 
-    protected String getTimeStamp(String Host, String Port) {
+    protected String getTimeStamp(String Host, int Port) {
         String timestamp;
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        timestamp = Host + Port + time.getTime();
+        UUID idOne = UUID.randomUUID();
+        timestamp = Host + Port + idOne;
         return timestamp;
     }
 
