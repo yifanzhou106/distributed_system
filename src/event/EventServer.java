@@ -25,14 +25,14 @@ import java.net.URL;
 public class EventServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 7000;
+    public static int PORT = 8000;
     static int USER_PORT = 2000;
     static String USER_HOST = "mc01";
     private EventDataMap edm;
-
+    private QueueWorker qw;
     public EventServer() {
         edm = new EventDataMap();
-
+        qw = new QueueWorker(edm);
     }
 
     public static void main(String[] args) {
@@ -49,8 +49,8 @@ public class EventServer {
         ServletHandler handler = new ServletHandler();
         server.setHandler(handler);
 
-        handler.addServletWithMapping(new ServletHolder(new EventCreaterServlet(es.edm)), "/create");
-        handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm)), "/purchase/*");
+        handler.addServletWithMapping(new ServletHolder(new EventCreaterServlet(es.edm,es.qw)), "/create");
+        handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm,es.qw)), "/purchase/*");
         handler.addServletWithMapping(new ServletHolder(new FindNodeServlet(es.edm)), "/nodes");
         handler.addServletWithMapping(new ServletHolder(new EventAddServlet(es.edm)), "/nodes/add");
         handler.addServletWithMapping(new ServletHolder(new AddFrontEndNodeServlet(es.edm)), "/nodes/add/frontend");

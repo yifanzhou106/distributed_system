@@ -20,7 +20,10 @@ public class EventDataMap {
     private ReentrantReadWriteLock rwl;
     private ReentrantReadWriteLock eventnodelock;
     private ReentrantReadWriteLock frontendnodelock;
+    private ReentrantReadWriteLock VersionIDLock;
+
     private ReentrantReadWriteLock timestamplock;
+
     private BlockingQueue queue;
 
 
@@ -34,6 +37,7 @@ public class EventDataMap {
 
     private String FollowerHost;
     private String FollowerPort;
+    private int VersionID;
 
 
     public EventDataMap() {
@@ -43,8 +47,9 @@ public class EventDataMap {
         rwl = new ReentrantReadWriteLock();
         eventnodelock = new ReentrantReadWriteLock();
         frontendnodelock = new ReentrantReadWriteLock();
+        VersionIDLock = new ReentrantReadWriteLock();
+        VersionID = 0;
         queue = new ArrayBlockingQueue(1024);
-
         timestamplock = new ReentrantReadWriteLock();
         timeStampsSet = new HashSet<>();
 
@@ -88,8 +93,6 @@ public class EventDataMap {
      * @param purchased
      */
     public void createNewEvent(long eventid, String eventname, long userid, long avail, long purchased) {
-        System.out.println("createNewEvent");
-
         rwl.writeLock().lock();
         singleEventMap = new HashMap();
         singleEventMap.put("eventname", eventname);
@@ -151,12 +154,11 @@ public class EventDataMap {
      */
     public Boolean purchaseTicket(long eventid, long tickets) {
         Boolean isSuccess = false;
-        System.out.println("In purchase Tacket");
+        System.out.println("In purchase Ticket");
 
         rwl.writeLock().lock();
 
         if (eventMap.containsKey(eventid)) {
-            System.out.println("In purchase Tacket");
             String eventname;
             long userid, avail, purchased;
             singleEventMap = eventMap.get(eventid);
@@ -343,6 +345,10 @@ public class EventDataMap {
             }
             timestamplock.writeLock().unlock();
 
+            VersionIDLock.writeLock().lock();
+            VersionID = Integer.parseInt((String) JsonObj.get("vid"));
+            VersionIDLock.writeLock().unlock();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -394,6 +400,10 @@ public class EventDataMap {
         jsonArray = new JSONArray();
         item = new JSONObject();
         Iterator iterator = timeStampsSet.iterator();
+
+        VersionIDLock.readLock().lock();
+        obj.put("vid", String.valueOf(VersionID));
+        VersionIDLock.readLock().unlock();
 
         while (iterator.hasNext()) {
             item.put("timestamp", iterator.next());
@@ -447,7 +457,7 @@ public class EventDataMap {
         return json;
     }
 
-    public void Queue(String jsonString) {
+    public void Enqueue(String jsonString) {
         try {
             queue.put(jsonString);
         } catch (InterruptedException e) {
@@ -464,6 +474,23 @@ public class EventDataMap {
 
         }
         return jsonString;
+    }
+
+
+    public int getVersionID() {
+        int i;
+        VersionIDLock.readLock().lock();
+        i = VersionID;
+        VersionIDLock.readLock().unlock();
+        return i;
+    }
+
+    public void increaseVid() {
+        VersionIDLock.writeLock().lock();
+        VersionID++;
+        VersionIDLock.writeLock().unlock();
+
+
     }
 
 

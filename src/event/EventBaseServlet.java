@@ -169,7 +169,7 @@ public class EventBaseServlet extends HttpServlet {
         HashMap<String, String> singleNodeMap;
         String host, port;
         nodeMap = edm.getNodeMap();
-        edm.Queue(s);
+        edm.Enqueue(s);
         s = edm.Dequeue();
         try {
             for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {

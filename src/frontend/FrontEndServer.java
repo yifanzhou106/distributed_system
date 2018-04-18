@@ -7,6 +7,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
@@ -23,24 +24,20 @@ import java.net.URL;
  */
 public class FrontEndServer {
     protected static Logger log = LogManager.getLogger();
-    public static String HOST ="localhost";
+    public static String HOST = "localhost";
     public static int PORT = 5600;
     public static volatile int EVENT_PORT = 7000;
     public static volatile String EVENT_HOST = "localhost";
     static int USER_PORT = 2000;
     static String USER_HOST = "mc01";
 
-    public FrontEndServer ()
-    {
-
-    }
 
     public static void main(String[] args) {
         FrontEndServer fes = new FrontEndServer();
-        if (args.length>0)
-        if (args[0].equals("-port")) {
-            PORT = Integer.parseInt(args[1]);
-        }
+        if (args.length > 0)
+            if (args[0].equals("-port")) {
+                PORT = Integer.parseInt(args[1]);
+            }
         Server server = new Server(PORT);
 
         fes.tellThemIamOn();
@@ -59,7 +56,6 @@ public class FrontEndServer {
         context.addServlet(OtherServlet.class, "/*");
 
 
-
         server.setHandler(context);
 
         log.info("Starting server on port " + PORT + "...");
@@ -74,13 +70,28 @@ public class FrontEndServer {
             System.exit(-1);
         }
     }
-    public void tellThemIamOn()
-    {
+
+    public void tellThemIamOn() {
         try {
+//            String url = "http://localhost:5600/nodes";
+//            String responseS;
+//            responseS = sendGet(url);
+//            String primeHost, primePort;
+//            JSONParser parser = new JSONParser();
+//            Object jsonObj = parser.parse(responseS);
+//            JSONObject jsonObject = (JSONObject) jsonObj;
+//            JSONObject prime = (JSONObject) jsonObject.get("primary");
+//            primeHost = (String) prime.get("host");
+//            primePort = (String) prime.get("port");
+//
+//            EVENT_HOST = primeHost;
+//            EVENT_PORT = Integer.parseInt(primePort);
+
 //            HOST = InetAddress.getLocalHost().toString();
-            HOST = "localhost";
             String responseS;
-            String url = "http://localhost:7000/nodes/add/frontend";
+            HOST = "localhost";
+            String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/nodes/add/frontend";
+
             String s;
             JSONObject obj = new JSONObject();
             JSONObject item = new JSONObject();
@@ -88,17 +99,50 @@ public class FrontEndServer {
             item.put("port", String.valueOf(PORT));
             obj.put("frontend", item);
             s = obj.toString();
-            responseS = sendPost(url,s);
+            responseS = sendPost(url, s);
             System.out.println(responseS);
 
-        }catch (Exception e)
-        {
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    // HTTP GET request
+    protected String sendGet(String url) throws Exception {
+
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("User-Agent", "HTTP/1.1");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("Response Code : " + responseCode);
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer responseStr = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                responseStr.append(inputLine);
+            }
+
+            in.close();
+
+            return responseStr.toString();
+        }
+
+        return "";
+    }
+
     // HTTP POST request
-    protected String sendPost( String url, String urlParameters) throws Exception {
+    protected String sendPost(String url, String urlParameters) throws Exception {
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();

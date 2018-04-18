@@ -42,7 +42,13 @@ public class CreateEventServlet extends BaseServlet {
             json.put("timestamp", timestamp);
             String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/create";
             String responseS;
-            responseS = sendPost(response, url, json.toString());
+            try {
+                responseS = sendPost(response, url, json.toString());
+            } catch (Exception e) {
+                System.out.println("\nPrimary Event server error, resend in one second");
+                Thread.sleep(1000);
+                responseS = sendPost(response, url, json.toString());
+            }
 
 
             out.println(responseS);

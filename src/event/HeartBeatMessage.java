@@ -56,7 +56,6 @@ public class HeartBeatMessage implements Runnable {
 
     private void checkAlive(EventDataMap edm, String path) {
         Map<String, HashMap<String, String>> nodeMap;
-        HashMap<String, String> singleNodeMap;
         String host, port;
         if (edm.isPrimary()) {
             nodeMap = edm.getNodeMap();

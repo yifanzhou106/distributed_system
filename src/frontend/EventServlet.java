@@ -71,7 +71,6 @@ public class EventServlet extends BaseServlet {
             ArrayList<String> parameterList = getUrlParameterList(request);
             String eventid;
             String userid;
-            String s;
             if (parameterList.size() == 2) {
                 eventid = parameterList.get(0);
                 userid = parameterList.get(1);
@@ -84,11 +83,16 @@ public class EventServlet extends BaseServlet {
                 json.put("tickets", tickets);
                 json.put("timestamp", timestamp);
 
-                s = json.toString();
                 url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/purchase/" + eventid;
 
                 String responseS;
-                responseS = sendPost(response, url, s);
+                try {
+                    responseS = sendPost(response, url, json.toString());
+                } catch (Exception e) {
+                    System.out.println("\nPrimary Event server error, resend in one second");
+                    Thread.sleep(1000);
+                    responseS = sendPost(response, url, json.toString());
+                }
                 out.println(responseS);
             } else {
                 response.setStatus(400);

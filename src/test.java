@@ -42,7 +42,7 @@ public class test {
      * create threads
      */
     public void beginChat() {
-            for (int i = 0; i <1000; i++)
+            for (int i = 0; i <10; i++)
                 threads.submit(new sendGetMessage());
 //        list();
 
@@ -61,7 +61,11 @@ public class test {
     public class sendGetMessage implements Runnable {
         @Override
         public void run () {
-            create();
+            int port = 5600;
+            create(port);
+//            port = 5610;
+//            create(port);
+
 //            purchase();
 //            list();
 //            createPurchase ();
@@ -69,7 +73,7 @@ public class test {
 //            purchaseEvent();
     }
 
-    void create (){
+    void create (int port){
         try {
             String url = "http://" + HOST + ":" + PORT + "/events/create";
             String s = "{\"userid\":1001, \"eventname\":\"Dinner\", \"numtickets\": 20}";

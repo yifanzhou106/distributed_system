@@ -19,10 +19,12 @@ import static event.EventServer.PORT;
  */
 public class EventCreaterServlet extends EventBaseServlet {
     private EventDataMap edm;
+    private QueueWorker qw;
 
 
-    public EventCreaterServlet(EventDataMap edm) {
+    public EventCreaterServlet(EventDataMap edm,QueueWorker qw) {
         this.edm = edm;
+        this.qw = qw;
     }
 
     @Override
@@ -38,12 +40,12 @@ public class EventCreaterServlet extends EventBaseServlet {
         try {
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
-            System.out.println("json: "+body);
             long eventid;
             long userid;
             String eventname;
             long numtickets;
             String timestamp;
+            String VersionID;
 
             userid = (Long) readJsonObj(body, "userid");
             eventname = (String) (readJsonObj(body, "eventname"));
@@ -55,13 +57,15 @@ public class EventCreaterServlet extends EventBaseServlet {
 
                 JSONObject json = new JSONObject();
                 if (edm.isPrimary()) {
+                    edm.increaseVid();
+                    VersionID = String.valueOf( edm.getVersionID()) ;
                     eventid = edm.createRandomEventId();
-                    System.out.println(eventid);
                     json.put("eventid", eventid);
                     json.put("userid", userid);
                     json.put("eventname", eventname);
                     json.put("numtickets", numtickets);
                     json.put("timestamp", timestamp);
+                    json.put("vid",VersionID);
                     String path = "/create";
                     sendToReplic(response, edm, json.toString(), path);
 
@@ -70,18 +74,17 @@ public class EventCreaterServlet extends EventBaseServlet {
                     json.put("eventid", eventid);
                     json.put("timestamp", timestamp);
                     body = json.toString();
-                } else {
-                    eventid = (Long) readJsonObj(body, "eventid");
-                }
-                System.out.println("Create a new event: "+ body);
-                edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
-                out.println(body);
-            }
-            else
-            {
-                System.out.println("\nRepeat Time Stamp "+ body);
-            }
+                    edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
 
+                } else {
+                    QueueObject obj =new QueueObject("create","post",body);
+                    qw.enqueue(obj);
+                }
+//                System.out.println("Create a new event: " + body);
+                out.println(body);
+            } else {
+                System.out.println("\nRepeat Time Stamp " + body);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
