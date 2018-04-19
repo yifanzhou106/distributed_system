@@ -61,12 +61,13 @@ public class test {
     public class sendGetMessage implements Runnable {
         @Override
         public void run () {
-            int port = 5600;
-            create(port);
-//            port = 5610;
-//            create(port);
 
-//            purchase();
+//            create(5600);
+            create(5700);
+
+//            purchase(5600, 6475);
+//            purchase(5700, 5179);
+
 //            list();
 //            createPurchase ();
 //            createEvent();
@@ -75,7 +76,7 @@ public class test {
 
     void create (int port){
         try {
-            String url = "http://" + HOST + ":" + PORT + "/events/create";
+            String url = "http://" + HOST + ":" + port + "/events/create";
             String s = "{\"userid\":1001, \"eventname\":\"Dinner\", \"numtickets\": 20}";
             System.out.println(sendPost(url, s));
         }
@@ -115,9 +116,9 @@ public class test {
             }
         }
 
-        void purchase (){
+        void purchase (int port,int id){
             try {
-                String url = "http://" + HOST + ":" + PORT + "/events/"+214 +"/purchase/34";
+                String url = "http://" + HOST + ":" + port + "/events/"+id +"/purchase/34";
                 String s = "{\"tickets\":1}";
                 System.out.println(sendPost(url, s));
             }

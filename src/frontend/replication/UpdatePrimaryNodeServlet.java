@@ -35,14 +35,11 @@ public class UpdatePrimaryNodeServlet extends BaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-//        printRequest(request);
         PrintWriter out = response.getWriter();
-        String s = extractPostRequestBody(request);
-        System.out.println(s);
+        String body = extractPostRequestBody(request);
+        System.out.println(body);
         try {
-            JSONParser parser = new JSONParser();
-            Object jsonObj = parser.parse(s);
-            JSONObject obj = (JSONObject) jsonObj;
+            JSONObject obj = readJsonObj(body);
             JSONObject item = (JSONObject) obj.get("primary");
             EVENT_HOST = (String) item.get("host");
             EVENT_PORT = Integer.parseInt((String)item.get("port"));

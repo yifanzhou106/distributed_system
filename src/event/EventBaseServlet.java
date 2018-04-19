@@ -18,16 +18,22 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Provides base functionality to all servlets in this example.
  * Example of Prof. Engle
  */
 public class EventBaseServlet extends HttpServlet {
+    private BlockingQueue queue = new ArrayBlockingQueue(1024);
+    public final ExecutorService threads = Executors.newCachedThreadPool();
+
 
     protected void printRequest(HttpServletRequest httpRequest) {
         System.out.println(" \n\n Headers");
-
         Enumeration headerNames = httpRequest.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = (String) headerNames.nextElement();
@@ -49,11 +55,11 @@ public class EventBaseServlet extends HttpServlet {
         return "";
     }
 
-    protected Object readJsonObj(String objString, String key) throws Exception {
+    protected JSONObject readJsonObj(String objString) throws Exception {
         JSONParser parser = new JSONParser();
         Object jsonObj = parser.parse(objString);
         JSONObject jsonObject = (JSONObject) jsonObj;
-        return jsonObject.get(key);
+        return jsonObject;
     }
 
     protected ArrayList<String> getUrlParameterList(HttpServletRequest request) {
@@ -68,7 +74,7 @@ public class EventBaseServlet extends HttpServlet {
         return parameterList;
     }
 
-    // HTTP GET request
+    // HTTP GET request,return String
     protected String sendGet(HttpServletResponse httpResponse, String url) throws Exception {
 
 
@@ -102,7 +108,7 @@ public class EventBaseServlet extends HttpServlet {
         return "";
     }
 
-    // HTTP GET request
+    // HTTP GET request, return response code
     public int sendGet(String url) throws Exception {
 
 
@@ -163,40 +169,34 @@ public class EventBaseServlet extends HttpServlet {
 
     }
 
-
-    protected void sendToReplic(HttpServletResponse response, EventDataMap edm, String s, String path) {
+    public class sendToReplic implements Runnable {
+        HttpServletResponse response;
         Map<String, HashMap<String, String>> nodeMap;
-        HashMap<String, String> singleNodeMap;
-        String host, port;
-        nodeMap = edm.getNodeMap();
-        edm.Enqueue(s);
-        s = edm.Dequeue();
-        try {
-            for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                singleNodeMap = entry.getValue();
-                host = singleNodeMap.get("host");
-                port = singleNodeMap.get("port");
-                String url = "http://" + host + ":" + port + path;
-                System.out.println("Sending replic to " + url);
-                try {
-                    sendPost(response, url, s);
-                } catch (Exception e) {
-                    System.out.println("\nCan not connect to " + url);
-                }
+        String s;
+        String path;
+
+        public sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path) {
+            this.response = response;
+            this.nodeMap = nodeMap;
+            this.s = s;
+            this.path = path;
+        }
+
+        @Override
+        public void run() {
+            try {
+                sendToReplic(response, nodeMap, s, path);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            response.setStatus(400);
-            e.printStackTrace();
         }
     }
 
-    protected void sendToFrontend(HttpServletResponse response, EventDataMap edm, String s, String path) {
-        Map<String, HashMap<String, String>> nodeMap;
-        HashMap<String, String> singleNodeMap;
+    protected void sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path) {
         String host, port;
-        nodeMap = edm.getFrontEndMap();
         try {
             for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
+                HashMap<String, String> singleNodeMap;
                 singleNodeMap = entry.getValue();
                 host = singleNodeMap.get("host");
                 port = singleNodeMap.get("port");
@@ -213,4 +213,22 @@ public class EventBaseServlet extends HttpServlet {
         }
     }
 
+    public void Enqueue(String jsonString) {
+        try {
+            queue.put(jsonString);
+        } catch (InterruptedException e) {
+            System.out.println("Cannot add into queue: " + jsonString);
+        }
+    }
+
+    public String Dequeue() {
+        String jsonString = "";
+        try {
+            jsonString = (String) queue.take();
+        } catch (InterruptedException e) {
+            System.out.println("Cannot take from queue: ");
+
+        }
+        return jsonString;
+    }
 }

@@ -3,7 +3,6 @@ package event.replication;
 import event.EventBaseServlet;
 import event.EventDataMap;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,23 +11,27 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Create events
- */
 public class NodeElectionServlet extends EventBaseServlet {
     private EventDataMap edm;
+    private Map<String, HashMap<String, String>> nodeMap;
+
 
     public NodeElectionServlet(EventDataMap edm) {
         this.edm = edm;
     }
 
+    /**
+     * Election method
+     * Send GET method to every node (Key) greater than itself
+     * @param request
+     * @param response
+     * @throws IOException
+     */
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-//        printRequest(request);
         PrintWriter out = response.getWriter();
         out.println();
-
         String host, port;
         try {
             host = edm.getFollowerHost();
@@ -59,9 +62,11 @@ public class NodeElectionServlet extends EventBaseServlet {
                 edm.setPrimaryHost(host);
                 edm.setPrimaryPort(port);
                 String s = edm.getPrimaryJsonString();
-                sendToReplic(response, edm, s, path);
+                nodeMap =edm.getNodeMap();
+                sendToReplic(response, nodeMap, s, path);
                 path = "/nodes";
-                sendToFrontend(response, edm, s, path);
+                nodeMap =edm.getFrontEndMap();
+                sendToReplic(response, nodeMap, s, path);
 
             }
         } catch (Exception e) {
@@ -70,18 +75,22 @@ public class NodeElectionServlet extends EventBaseServlet {
 
     }
 
+    /**
+     * Election Finished
+     * Receive new Primary server's POST, and update Primary Info locally
+     * @param request
+     * @param response
+     * @throws IOException
+     */
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-//        printRequest(request);
         PrintWriter out = response.getWriter();
         String body = extractPostRequestBody(request);
         String HOST, PORT;
         try {
-            JSONParser parser = new JSONParser();
-            Object jsonObj = parser.parse(body);
-            JSONObject jsonObject = (JSONObject) jsonObj;
-            JSONObject item = (JSONObject) jsonObject.get("primary");
+            JSONObject jsonobj = readJsonObj(body);
+            JSONObject item = (JSONObject) jsonobj.get("primary");
             HOST = (String) item.get("host");
             PORT = (String) item.get("port");
             System.out.println("\nElection Finished");

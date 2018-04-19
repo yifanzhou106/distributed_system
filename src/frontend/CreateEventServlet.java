@@ -17,7 +17,6 @@ public class CreateEventServlet extends BaseServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         response.setStatus(400);
 
     }
@@ -25,14 +24,14 @@ public class CreateEventServlet extends BaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         PrintWriter out = response.getWriter();
 
         try {
             String body = extractPostRequestBody(request);
-            long userid = (Long) readJsonObj(body, "userid");
-            String eventname = (String) (readJsonObj(body, "eventname"));
-            long numtickets = (Long) (readJsonObj(body, "numtickets"));
+            JSONObject obj = readJsonObj(body);
+            long userid = (Long) obj.get("userid");
+            String eventname = (String) obj.get("eventname");
+            long numtickets = (Long) obj.get("numtickets");
             String timestamp = getTimeStamp(HOST, PORT);
 
             JSONObject json = new JSONObject();

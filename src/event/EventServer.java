@@ -36,12 +36,23 @@ public class EventServer {
     }
 
     public static void main(String[] args) {
-        if (args.length > 0)
-            if (args[0].equals("-port")) {
-                PORT = Integer.parseInt(args[1]);
-            }
-        // Needs host,port input
         EventServer es = new EventServer();
+
+        if (args.length > 0) {
+            if (args[0].equals("-localhost")) {
+                HOST = args[1];
+            }
+            if (args[2].equals("-localport")) {
+                PORT = Integer.parseInt(args[3]);
+            }
+            if (args[4].equals("-primaryhost")) {
+                es.edm.setPrimaryHost(args[5]);
+            }
+            if (args[6].equals("-primarport")) {
+                es.edm.setPrimaryPort(args[7]);
+            }
+        }
+        // Needs host,port input
         Server server = new Server(PORT);
         es.tellThemIamOn();
         Thread heartBeat = new Thread(new HeartBeatMessage(es.edm));
@@ -52,7 +63,6 @@ public class EventServer {
         handler.addServletWithMapping(new ServletHolder(new EventCreaterServlet(es.edm,es.qw)), "/create");
         handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm,es.qw)), "/purchase/*");
         handler.addServletWithMapping(new ServletHolder(new FindNodeServlet(es.edm)), "/nodes");
-        handler.addServletWithMapping(new ServletHolder(new EventAddServlet(es.edm)), "/nodes/add");
         handler.addServletWithMapping(new ServletHolder(new AddFrontEndNodeServlet(es.edm)), "/nodes/add/frontend");
         handler.addServletWithMapping(new ServletHolder(new NodeElectionServlet(es.edm)), "/nodes/election");
 

@@ -30,7 +30,6 @@ public class EventGetterServlet extends EventBaseServlet {
             PrintWriter out = response.getWriter();
             ArrayList<String> parameterList = getUrlParameterList(request);
             String eventid = parameterList.get(3);
-            printRequest(request);
             String s;
             if (eventid.equals("list")) {
                 s = edm.getEventList().toString();
@@ -39,7 +38,6 @@ public class EventGetterServlet extends EventBaseServlet {
             }
             if (s.equals("[]") || s.equals("{}"))
                 response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
-
             response.setContentType("application/json");
             out.println(s);
         } catch (Exception e) {
@@ -51,7 +49,6 @@ public class EventGetterServlet extends EventBaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         response.setStatus(400);
 
     }

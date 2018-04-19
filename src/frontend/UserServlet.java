@@ -29,7 +29,6 @@ public class UserServlet extends BaseServlet {
         ArrayList<String> parameterList = getUrlParameterList(request);
         String userid;
 
-        printRequest(request);
         PrintWriter out = response.getWriter();
         String url;
         try {
@@ -67,22 +66,13 @@ public class UserServlet extends BaseServlet {
         try {
             ArrayList<String> parameterList = getUrlParameterList(request);
             String userid;
-            String s;
+
             if (!(parameterList.isEmpty())) {
                 userid = parameterList.get(0);
-                long eventid = (Long) readJsonObj(body, "eventid");
-                long tickets = (Long) readJsonObj(body, "tickets");
-                long targetuser = (Long) readJsonObj(body, "targetuser");
-                JSONObject json = new JSONObject();
-                json.put("eventid", eventid);
-                json.put("tickets", tickets);
-                json.put("targetuser", targetuser);
-
-                s = json.toString();
                 url = "http://" + USER_HOST + ":" + USER_PORT + "/" + userid + "/tickets/transfer";
 
                 String responseS;
-                responseS = sendPost(response, url, s);
+                responseS = sendPost(response, url, body);
                 out.println(responseS);
             } else {
                 response.setStatus(400);

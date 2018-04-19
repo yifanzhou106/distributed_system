@@ -49,11 +49,11 @@ public class BaseServlet extends HttpServlet {
         return "";
     }
 
-    protected Object readJsonObj(String objString, String key) throws Exception {
+    protected JSONObject readJsonObj(String objString) throws Exception {
         JSONParser parser = new JSONParser();
         Object jsonObj = parser.parse(objString);
         JSONObject jsonObject = (JSONObject) jsonObj;
-        return jsonObject.get(key);
+        return jsonObject;
     }
 
     protected ArrayList<String> getUrlParameterList(HttpServletRequest request) {

@@ -22,7 +22,6 @@ public class CreateUserServlet extends BaseServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         response.setStatus(400);
 
     }
@@ -30,7 +29,6 @@ public class CreateUserServlet extends BaseServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        printRequest(request);
         PrintWriter out = response.getWriter();
 
         try {

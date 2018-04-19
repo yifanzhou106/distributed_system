@@ -27,7 +27,6 @@ public class EventServlet extends BaseServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        printRequest(request);
         PrintWriter out = response.getWriter();
         String url;
         try {
@@ -64,10 +63,10 @@ public class EventServlet extends BaseServlet {
             throws IOException {
         PrintWriter out = response.getWriter();
         String url;
-        String body = extractPostRequestBody(request);
-        printRequest(request);
 
         try {
+            String body = extractPostRequestBody(request);
+            JSONObject obj = readJsonObj(body);
             ArrayList<String> parameterList = getUrlParameterList(request);
             String eventid;
             String userid;
@@ -75,16 +74,14 @@ public class EventServlet extends BaseServlet {
                 eventid = parameterList.get(0);
                 userid = parameterList.get(1);
                 String timestamp = getTimeStamp(HOST, PORT);
+                long tickets = (Long) obj.get("tickets");
 
-                long tickets = (Long) readJsonObj(body, "tickets");
                 JSONObject json = new JSONObject();
                 json.put("userid", Long.parseLong(userid));
                 json.put("eventid", Long.parseLong(eventid));
                 json.put("tickets", tickets);
                 json.put("timestamp", timestamp);
-
                 url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/purchase/" + eventid;
-
                 String responseS;
                 try {
                     responseS = sendPost(response, url, json.toString());

@@ -3,12 +3,9 @@ package event;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 public class QueueObject {
 
-    public Boolean finishFlag;
+    public Boolean finishFlag = false;
     private String method;
     private String path;
     private String body;

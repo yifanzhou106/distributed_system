@@ -18,14 +18,14 @@ import java.net.InetAddress;
 import java.net.URL;
 
 /**
- * Project 3 - Service-Oriented Ticket Purchase Application
+ * Project 4 - Replication
  *
  * @Author Yifan Zhou
  */
 public class FrontEndServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 5600;
+    public static int PORT = 5700;
     public static volatile int EVENT_PORT = 7000;
     public static volatile String EVENT_HOST = "localhost";
     static int USER_PORT = 2000;
@@ -34,10 +34,20 @@ public class FrontEndServer {
 
     public static void main(String[] args) {
         FrontEndServer fes = new FrontEndServer();
-        if (args.length > 0)
-            if (args[0].equals("-port")) {
-                PORT = Integer.parseInt(args[1]);
+        if (args.length > 0) {
+            if (args[0].equals("-localhost")) {
+                HOST = args[1];
             }
+            if (args[2].equals("-localport")) {
+                PORT = Integer.parseInt(args[3]);
+            }
+            if (args[4].equals("-primaryhost")) {
+                EVENT_HOST = args[5];
+            }
+            if (args[6].equals("-primarport")) {
+                EVENT_PORT = Integer.parseInt(args[7]);
+            }
+        }
         Server server = new Server(PORT);
 
         fes.tellThemIamOn();

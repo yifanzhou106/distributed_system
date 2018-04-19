@@ -4,11 +4,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -23,8 +20,6 @@ public class EventDataMap {
     private ReentrantReadWriteLock VersionIDLock;
 
     private ReentrantReadWriteLock timestamplock;
-
-    private BlockingQueue queue;
 
 
     private Map<String, HashMap<String, String>> nodeMap;
@@ -49,7 +44,6 @@ public class EventDataMap {
         frontendnodelock = new ReentrantReadWriteLock();
         VersionIDLock = new ReentrantReadWriteLock();
         VersionID = 0;
-        queue = new ArrayBlockingQueue(1024);
         timestamplock = new ReentrantReadWriteLock();
         timeStampsSet = new HashSet<>();
 
@@ -72,15 +66,19 @@ public class EventDataMap {
      * @return
      */
     public Long createRandomEventId() {
-        Random rand = new Random();
-        long id;
         rwl.readLock().lock();
-        do {
-            id = rand.nextInt(10000);
-        } while (eventMap.containsKey(id));
-        rwl.readLock().unlock();
+        try {
+            Random rand = new Random();
+            long id;
+            do {
+                id = rand.nextInt(10000);
+            } while (eventMap.containsKey(id));
+            return id;
+        } finally {
+            rwl.readLock().unlock();
+        }
 
-        return id;
+
     }
 
     /**
@@ -94,13 +92,16 @@ public class EventDataMap {
      */
     public void createNewEvent(long eventid, String eventname, long userid, long avail, long purchased) {
         rwl.writeLock().lock();
-        singleEventMap = new HashMap();
-        singleEventMap.put("eventname", eventname);
-        singleEventMap.put("userid", userid);
-        singleEventMap.put("avail", avail);
-        singleEventMap.put("purchased", purchased);
-        eventMap.put(eventid, singleEventMap);
-        rwl.writeLock().unlock();
+        try {
+            singleEventMap = new HashMap();
+            singleEventMap.put("eventname", eventname);
+            singleEventMap.put("userid", userid);
+            singleEventMap.put("avail", avail);
+            singleEventMap.put("purchased", purchased);
+            eventMap.put(eventid, singleEventMap);
+        } finally {
+            rwl.writeLock().unlock();
+        }
     }
 
     /**
@@ -110,16 +111,19 @@ public class EventDataMap {
      */
     public JSONArray getEventList() {
         rwl.readLock().lock();
-        JSONArray jsonArray = new JSONArray();
-        JSONObject item = new JSONObject();
-        for (Map.Entry<Long, HashMap<String, Object>> entry : eventMap.entrySet()) {
-            long eventid = entry.getKey();
-            item = getEventInfo(eventid);
-            jsonArray.add(item);
-        }
-        rwl.readLock().unlock();
+        try {
+            JSONArray jsonArray = new JSONArray();
+            JSONObject item = new JSONObject();
+            for (Map.Entry<Long, HashMap<String, Object>> entry : eventMap.entrySet()) {
+                long eventid = entry.getKey();
+                item = getEventInfo(eventid);
+                jsonArray.add(item);
+            }
 
-        return jsonArray;
+            return jsonArray;
+        } finally {
+            rwl.readLock().unlock();
+        }
     }
 
     /**
@@ -129,20 +133,24 @@ public class EventDataMap {
      * @return
      */
     public JSONObject getEventInfo(Long eventid) {
-        JSONObject s = new JSONObject();
         rwl.readLock().lock();
-        if (eventMap.containsKey(eventid)) {
-            String eventname;
-            long userid, avail, purchased;
-            singleEventMap = eventMap.get(eventid);
-            eventname = (String) singleEventMap.get("eventname");
-            userid = (Long) singleEventMap.get("userid");
-            avail = (Long) singleEventMap.get("avail");
-            purchased = (Long) singleEventMap.get("purchased");
-            s = toJsonObject(eventid, eventname, userid, avail, purchased);
+        try {
+            JSONObject s = new JSONObject();
+            if (eventMap.containsKey(eventid)) {
+                String eventname;
+                long userid, avail, purchased;
+                singleEventMap = eventMap.get(eventid);
+                eventname = (String) singleEventMap.get("eventname");
+                userid = (Long) singleEventMap.get("userid");
+                avail = (Long) singleEventMap.get("avail");
+                purchased = (Long) singleEventMap.get("purchased");
+                s = toJsonObject(eventid, eventname, userid, avail, purchased);
+            }
+            return s;
+        } finally {
+            rwl.readLock().unlock();
+
         }
-        rwl.readLock().unlock();
-        return s;
     }
 
     /**
@@ -153,37 +161,32 @@ public class EventDataMap {
      * @return
      */
     public Boolean purchaseTicket(long eventid, long tickets) {
-        Boolean isSuccess = false;
-        System.out.println("In purchase Ticket");
-
         rwl.writeLock().lock();
+        try {
+            Boolean isSuccess = false;
 
-        if (eventMap.containsKey(eventid)) {
-            String eventname;
-            long userid, avail, purchased;
-            singleEventMap = eventMap.get(eventid);
-            eventname = (String) singleEventMap.get("eventname");
-            userid = (Long) singleEventMap.get("userid");
-            avail = (Long) (singleEventMap.get("avail"));
-            purchased = (Long) (singleEventMap.get("purchased"));
-            System.out.println(eventname + userid + avail + purchased);
-            if (avail - tickets >= 0) {
-                avail = avail - tickets;
-                purchased = purchased + tickets;
-                isSuccess = true;
-                eventMap.remove(eventid);
-                System.out.println("Create Event\n");
-
-                createNewEvent(eventid, eventname, userid, avail, purchased);
-                System.out.println("Create Event finished\n");
-            } else {
-                System.out.println("Neg cases: " + ((Long) (singleEventMap.get("avail")) - tickets));
+            if (eventMap.containsKey(eventid)) {
+                String eventname;
+                long userid, avail, purchased;
+                singleEventMap = eventMap.get(eventid);
+                eventname = (String) singleEventMap.get("eventname");
+                userid = (Long) singleEventMap.get("userid");
+                avail = (Long) (singleEventMap.get("avail"));
+                purchased = (Long) (singleEventMap.get("purchased"));
+                if (avail - tickets >= 0) {
+                    avail = avail - tickets;
+                    purchased = purchased + tickets;
+                    isSuccess = true;
+                    eventMap.remove(eventid);
+                    createNewEvent(eventid, eventname, userid, avail, purchased);
+                } else {
+                    System.out.println("Neg cases: " + ((Long) (singleEventMap.get("avail")) - tickets));
+                }
             }
+            return isSuccess;
+        } finally {
+            rwl.writeLock().unlock();
         }
-        rwl.writeLock().unlock();
-
-
-        return isSuccess;
     }
 
     /**
@@ -207,29 +210,56 @@ public class EventDataMap {
         return json;
     }
 
+    /**
+     * getNodeMap
+     *
+     * @return
+     */
     public Map<String, HashMap<String, String>> getNodeMap() {
         eventnodelock.readLock().lock();
-        Map<String, HashMap<String, String>> nodemap = nodeMap;
-        eventnodelock.readLock().unlock();
+        try {
+            Map<String, HashMap<String, String>> nodemap = nodeMap;
+            return nodemap;
 
-        return nodemap;
+        } finally {
+            eventnodelock.readLock().unlock();
+        }
+
     }
 
+    /**
+     * getFrontEndMap
+     *
+     * @return
+     */
     public Map<String, HashMap<String, String>> getFrontEndMap() {
         frontendnodelock.readLock().lock();
-        Map<String, HashMap<String, String>> nodemap = frontEndMap;
-        frontendnodelock.readLock().unlock();
+        try {
+            Map<String, HashMap<String, String>> nodemap = frontEndMap;
+            return nodemap;
+        }finally {
+            frontendnodelock.readLock().unlock();
 
-        return nodemap;
+        }
     }
 
+    /**
+     * Check Primary
+     *
+     * @return
+     */
     public Boolean isPrimary() {
-        System.out.println("Primary: " + PrimaryHost + PrimaryPort);
-        System.out.println("I am: " + FollowerHost + FollowerPort);
-
+//        System.out.println("Primary: " + PrimaryHost + PrimaryPort);
+//        System.out.println("I am: " + FollowerHost + FollowerPort);
         return PrimaryHost.equals(FollowerHost) && PrimaryPort.equals(FollowerPort);
     }
 
+    /**
+     * Check if timestamp existed
+     *
+     * @param timestamp
+     * @return
+     */
     public Boolean isTimeStampExist(String timestamp) {
         Boolean is_exist = false;
         timestamplock.readLock().lock();
@@ -240,6 +270,11 @@ public class EventDataMap {
         return is_exist;
     }
 
+    /**
+     * Add timestamp into map
+     *
+     * @param timestamp
+     */
     public void addTimeStamp(String timestamp) {
         timestamplock.writeLock().lock();
         timeStampsSet.add(timestamp);
@@ -247,33 +282,60 @@ public class EventDataMap {
 
     }
 
+    /**
+     * Add single node into nodemap
+     *
+     * @param host
+     * @param port
+     */
     public void addSingleNode(String host, String port) {
         eventnodelock.writeLock().lock();
-        singleNodeMap = new HashMap();
-        String key = host + port;
-        singleNodeMap.put("host", host);
-        singleNodeMap.put("port", port);
-        nodeMap.put(key, singleNodeMap);
-        eventnodelock.writeLock().unlock();
+        try {
+            singleNodeMap = new HashMap();
+            String key = host + port;
+            singleNodeMap.put("host", host);
+            singleNodeMap.put("port", port);
+            nodeMap.put(key, singleNodeMap);
+        }finally {
+            eventnodelock.writeLock().unlock();
+        }
 
     }
 
+    /**
+     * Add single node into frontend map
+     *
+     * @param host
+     * @param port
+     */
     public void addSingleFrontendNode(String host, String port) {
         frontendnodelock.writeLock().lock();
-        singleNodeMap = new HashMap();
-        String key = host + port;
-        singleNodeMap.put("host", host);
-        singleNodeMap.put("port", port);
-        frontEndMap.put(key, singleNodeMap);
-        frontendnodelock.writeLock().unlock();
+        try {
+            singleNodeMap = new HashMap();
+            String key = host + port;
+            singleNodeMap.put("host", host);
+            singleNodeMap.put("port", port);
+            frontEndMap.put(key, singleNodeMap);
+        }finally {
+            frontendnodelock.writeLock().unlock();
+        }
 
     }
 
-    public void removeSingleNode(String host, String port) {
+    /**
+     * Remove a single node from nodemap
+     *
+     * @param host
+     * @param port
+     */
+    public void removeSingleNode(String host, String port, Map<String, HashMap<String, String>> nodeMap) {
         eventnodelock.writeLock().lock();
-        String key = host + port;
-        nodeMap.remove(key);
-        eventnodelock.writeLock().unlock();
+        try {
+            String key = host + port;
+            nodeMap.remove(key);
+        }finally {
+            eventnodelock.writeLock().unlock();
+        }
 
     }
 
@@ -435,18 +497,20 @@ public class EventDataMap {
     }
 
     public JSONObject getNodeInfo(Map<String, HashMap<String, String>> nodeMap, String key) {
-        JSONObject s = new JSONObject();
         eventnodelock.readLock().lock();
-        if (nodeMap.containsKey(key)) {
-            String host, port;
-            singleNodeMap = nodeMap.get(key);
-            host = singleNodeMap.get("host");
-            port = singleNodeMap.get("port");
-
-            s = toNodeJsonObject(host, port);
+        try {
+            JSONObject s = new JSONObject();
+            if (nodeMap.containsKey(key)) {
+                String host, port;
+                singleNodeMap = nodeMap.get(key);
+                host = singleNodeMap.get("host");
+                port = singleNodeMap.get("port");
+                s = toNodeJsonObject(host, port);
+            }
+            return s;
+        }finally {
+            eventnodelock.readLock().unlock();
         }
-        eventnodelock.readLock().unlock();
-        return s;
     }
 
 
@@ -457,40 +521,24 @@ public class EventDataMap {
         return json;
     }
 
-    public void Enqueue(String jsonString) {
-        try {
-            queue.put(jsonString);
-        } catch (InterruptedException e) {
-            System.out.println("Cannot add into queue: " + jsonString);
-        }
-    }
-
-    public String Dequeue() {
-        String jsonString = "";
-        try {
-            jsonString = (String) queue.take();
-        } catch (InterruptedException e) {
-            System.out.println("Cannot take from queue: ");
-
-        }
-        return jsonString;
-    }
-
 
     public int getVersionID() {
-        int i;
         VersionIDLock.readLock().lock();
-        i = VersionID;
-        VersionIDLock.readLock().unlock();
-        return i;
+        try {
+            return VersionID;
+        } finally {
+            VersionIDLock.readLock().unlock();
+        }
     }
 
-    public void increaseVid() {
+    public int getVersionIDIncreased() {
         VersionIDLock.writeLock().lock();
-        VersionID++;
-        VersionIDLock.writeLock().unlock();
-
-
+        try {
+            VersionID++;
+            return VersionID;
+        } finally {
+            VersionIDLock.writeLock().unlock();
+        }
     }
 
 

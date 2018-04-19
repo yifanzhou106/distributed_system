@@ -1,18 +1,21 @@
 package event;
 
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Get into receive message threads
- * Will create a socket to receive messages
+ * Send HeartBeatMessage
+ * A single thread handling sending HeartBeatMessage
+ *
+ * Primary: Keep contact with all Frontend servers and secondary servers
+ * Catch Exception: Remove node from list
+ *
+ * Secondary: Only keep contact with Primary
+ * Catch Exception: Begin Election (Bully method)
  */
 public class HeartBeatMessage implements Runnable {
     private EventDataMap edm;
@@ -36,24 +39,6 @@ public class HeartBeatMessage implements Runnable {
 
     }
 
-    // HTTP GET request
-    private int sendGet(String url) throws Exception {
-
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-
-        //add request header
-        con.setRequestProperty("User-Agent", "HTTP/1.1");
-        con.setRequestProperty("Content-Type", "application/json");
-
-        int responseCode = con.getResponseCode();
-        System.out.println("\nChecking Server: " + url);
-        System.out.println("Response Code : " + responseCode);
-
-        return responseCode;
-    }
-
     private void checkAlive(EventDataMap edm, String path) {
         Map<String, HashMap<String, String>> nodeMap;
         String host, port;
@@ -64,8 +49,6 @@ public class HeartBeatMessage implements Runnable {
             nodeMap = edm.getFrontEndMap();
             sendToReplic(nodeMap, path);
             System.out.println("\nTotal alive Frontend Server List: " + edm.getFrontendNodeList().toString());
-
-
         } else {
             host = edm.getPrimaryHost();
             port = edm.getPrimaryPort();
@@ -91,6 +74,25 @@ public class HeartBeatMessage implements Runnable {
         }
     }
 
+
+    // HTTP GET request
+    private int sendGet(String url) throws Exception {
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("User-Agent", "HTTP/1.1");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        int responseCode = con.getResponseCode();
+//        System.out.println("\nChecking Server: " + url);
+//        System.out.println("Response Code : " + responseCode);
+
+        return responseCode;
+    }
+
     private void sendToReplic(Map<String, HashMap<String, String>> nodeMap, String path) {
         HashMap<String, String> singleNodeMap;
         String host, port;
@@ -106,7 +108,7 @@ public class HeartBeatMessage implements Runnable {
                 } catch (Exception e) {
                     System.out.println("\nCan not connect to " + url);
                     System.out.println("\nRemoving " + url);
-                    edm.removeSingleNode(host, port);
+                    edm.removeSingleNode(host, port, nodeMap);
                     System.out.println("\nRemove successfully");
                 }
             }

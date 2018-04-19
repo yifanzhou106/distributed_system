@@ -11,6 +11,8 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static event.EventServer.PORT;
 
@@ -20,11 +22,14 @@ import static event.EventServer.PORT;
 public class EventCreaterServlet extends EventBaseServlet {
     private EventDataMap edm;
     private QueueWorker qw;
+    private Map<String, HashMap<String, String>> nodeMap;
+    private ExecutorService threads;
 
 
     public EventCreaterServlet(EventDataMap edm,QueueWorker qw) {
         this.edm = edm;
         this.qw = qw;
+        threads = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -40,6 +45,8 @@ public class EventCreaterServlet extends EventBaseServlet {
         try {
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
+            JSONObject jsonobj = readJsonObj(body);
+
             long eventid;
             long userid;
             String eventname;
@@ -47,18 +54,17 @@ public class EventCreaterServlet extends EventBaseServlet {
             String timestamp;
             String VersionID;
 
-            userid = (Long) readJsonObj(body, "userid");
-            eventname = (String) (readJsonObj(body, "eventname"));
-            numtickets = (Long) (readJsonObj(body, "numtickets"));
-            timestamp = (String) (readJsonObj(body, "timestamp"));
+            userid = (Long) jsonobj.get("userid");
+            eventname = (String) jsonobj.get("eventname");
+            numtickets = (Long) jsonobj.get( "numtickets");
+            timestamp = (String) jsonobj.get("timestamp");
 
             if (!edm.isTimeStampExist(timestamp)) {
                 edm.addTimeStamp(timestamp);
 
                 JSONObject json = new JSONObject();
                 if (edm.isPrimary()) {
-                    edm.increaseVid();
-                    VersionID = String.valueOf( edm.getVersionID()) ;
+                    VersionID = String.valueOf( edm.getVersionIDIncreased()) ;
                     eventid = edm.createRandomEventId();
                     json.put("eventid", eventid);
                     json.put("userid", userid);
@@ -67,18 +73,22 @@ public class EventCreaterServlet extends EventBaseServlet {
                     json.put("timestamp", timestamp);
                     json.put("vid",VersionID);
                     String path = "/create";
-                    sendToReplic(response, edm, json.toString(), path);
-
+                    nodeMap = edm.getNodeMap();
+                    edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
+                    threads.submit(new sendToReplic(response, nodeMap, json.toString(), path));
+//                    sendToReplic(response, nodeMap, json.toString(), path);
                     response.setContentType("application/json");
                     json = new JSONObject();
                     json.put("eventid", eventid);
                     json.put("timestamp", timestamp);
                     body = json.toString();
-                    edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
 
                 } else {
+                    System.out.println("Receive: "+body);
                     QueueObject obj =new QueueObject("create","post",body);
                     qw.enqueue(obj);
+                    while (obj.getFinishFlag()) {
+                    }
                 }
 //                System.out.println("Create a new event: " + body);
                 out.println(body);
@@ -92,4 +102,5 @@ public class EventCreaterServlet extends EventBaseServlet {
         }
 
     }
+
 }
