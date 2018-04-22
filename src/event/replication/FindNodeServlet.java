@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import static event.EventServer.*;
 
 
 public class FindNodeServlet extends EventBaseServlet {
@@ -38,19 +39,21 @@ public class FindNodeServlet extends EventBaseServlet {
         PrintWriter out = response.getWriter();
         String s = extractPostRequestBody(request);
         System.out.println("\nNew Event Node is "+s);
-        String HOST, PORT;
+        String host, port;
         try {
             JSONObject jsonobj = readJsonObj(s);
             JSONObject item = (JSONObject) jsonobj.get("follower");
-            HOST = (String) item.get("host");
-            PORT = (String) item.get("port");
-            edm.addSingleNode(HOST, PORT);
+            host = (String) item.get("host");
+            port = (String) item.get("port");
+            edm.addSingleNode(host, port);
             System.out.println("\nAdd Event node successfully "+s);
+            System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
 
             if (edm.isPrimary()) {
                 String path = "/nodes";
                 nodeMap = edm.getNodeMap();
-                sendToReplic(response, nodeMap, s, path);
+                String key = HOST + PORT;
+                sendToReplic(response, nodeMap, s, path,key);
                 String responseS;
                 responseS = edm.getNodeList();
                 response.setContentType("application/json");

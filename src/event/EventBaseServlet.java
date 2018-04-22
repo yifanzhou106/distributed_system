@@ -174,38 +174,43 @@ public class EventBaseServlet extends HttpServlet {
         Map<String, HashMap<String, String>> nodeMap;
         String s;
         String path;
+        String key;
 
-        public sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path) {
+        public sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path,String key) {
             this.response = response;
             this.nodeMap = nodeMap;
             this.s = s;
             this.path = path;
+            this.key = key;
         }
 
         @Override
         public void run() {
             try {
-                sendToReplic(response, nodeMap, s, path);
+                sendToReplic(response, nodeMap, s, path,key);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    protected void sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path) {
+    protected void sendToReplic(HttpServletResponse response, Map<String, HashMap<String, String>> nodeMap, String s, String path, String key) {
         String host, port;
         try {
             for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
                 HashMap<String, String> singleNodeMap;
-                singleNodeMap = entry.getValue();
-                host = singleNodeMap.get("host");
-                port = singleNodeMap.get("port");
-                String url = "http://" + host + ":" + port + path;
-                try {
-                    sendPost(response, url, s);
-                } catch (Exception e) {
-                    System.out.println("\nCan not connect to " + url);
+                if (!entry.getKey().equals(key)) {
+                    singleNodeMap = entry.getValue();
+                    host = singleNodeMap.get("host");
+                    port = singleNodeMap.get("port");
+                    String url = "http://" + host + ":" + port + path;
+                    try {
+                        sendPost(response, url, s);
+                    } catch (Exception e) {
+//                        System.out.println("\nCan not connect to " + url);
+                    }
                 }
+                Thread.sleep(20);
             }
         } catch (Exception e) {
             response.setStatus(400);

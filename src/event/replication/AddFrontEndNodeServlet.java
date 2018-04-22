@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import static event.EventServer.*;
+
 
 
 public class AddFrontEndNodeServlet extends EventBaseServlet {
@@ -36,21 +38,22 @@ public class AddFrontEndNodeServlet extends EventBaseServlet {
             throws IOException {
         PrintWriter out = response.getWriter();
         String body = extractPostRequestBody(request);
-        String HOST, PORT;
+        String host, port;
         try {
             JSONObject jsonobj = readJsonObj(body);
             JSONObject item = (JSONObject) jsonobj.get("frontend");
-            HOST = (String) item.get("host");
-            PORT = (String) item.get("port");
-            System.out.println("\nAdd a new front end " + HOST + PORT);
-            edm.addSingleFrontendNode(HOST, PORT);
+            host = (String) item.get("host");
+            port = (String) item.get("port");
+            System.out.println("\nAdd a new front end " + host + port);
+            edm.addSingleFrontendNode(host, port);
             System.out.println("\nAdd a new front end successfully");
             System.out.println("Total alive Front End Server List: " + edm.getFrontendNodeList().toString());
             if (edm.isPrimary()) {
                 String path = "/nodes/add/frontend";
                 System.out.println("\nSending new frontend to replic");
                 nodeMap = edm.getNodeMap();
-                sendToReplic(response, nodeMap, body, path);
+                String key = HOST + PORT;
+                sendToReplic(response, nodeMap, body, path,key);
                 String responseS;
                 responseS = edm.getNodeList();
                 response.setContentType("application/json");

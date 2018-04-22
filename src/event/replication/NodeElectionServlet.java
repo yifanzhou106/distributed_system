@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static event.EventServer.*;
+
 public class NodeElectionServlet extends EventBaseServlet {
     private EventDataMap edm;
     private Map<String, HashMap<String, String>> nodeMap;
@@ -23,6 +25,7 @@ public class NodeElectionServlet extends EventBaseServlet {
     /**
      * Election method
      * Send GET method to every node (Key) greater than itself
+     *
      * @param request
      * @param response
      * @throws IOException
@@ -32,20 +35,16 @@ public class NodeElectionServlet extends EventBaseServlet {
             throws IOException {
         PrintWriter out = response.getWriter();
         out.println();
-        String host, port;
         try {
-            host = edm.getFollowerHost();
-            port = edm.getFollowerPort();
-
             Map<String, HashMap<String, String>> nodeMap;
             HashMap<String, String> singleNodeMap;
             nodeMap = edm.getNodeMap();
             String followerHost, followerPort;
-            String key = host + port;
+            String key = HOST + PORT;
             String path = "/nodes/election";
             Boolean canBePrimary = true;
             for (Map.Entry<String, HashMap<String, String>> entry : nodeMap.entrySet()) {
-                if (key.compareToIgnoreCase(entry.getKey()) < 0) {
+                if (key.compareToIgnoreCase(entry.getKey()) > 0) {
                     singleNodeMap = entry.getValue();
                     followerHost = singleNodeMap.get("host");
                     followerPort = singleNodeMap.get("port");
@@ -59,14 +58,16 @@ public class NodeElectionServlet extends EventBaseServlet {
                 }
             }
             if (canBePrimary) {
-                edm.setPrimaryHost(host);
-                edm.setPrimaryPort(port);
-                String s = edm.getPrimaryJsonString();
-                nodeMap =edm.getNodeMap();
-                sendToReplic(response, nodeMap, s, path);
+                System.out.println("Election finished\nI'm Primary: " + HOST + PORT);
+                EVENT_HOST = HOST;
+                EVENT_PORT = String.valueOf(PORT);
+                String s = edm.getNodeList();
+                nodeMap = edm.getNodeMap();
+                sendToReplic(response, nodeMap, s, path, key);
                 path = "/nodes";
-                nodeMap =edm.getFrontEndMap();
-                sendToReplic(response, nodeMap, s, path);
+                s = edm.getPrimaryJsonString();
+                nodeMap = edm.getFrontEndMap();
+                sendToReplic(response, nodeMap, s, path, key);
 
             }
         } catch (Exception e) {
@@ -78,6 +79,7 @@ public class NodeElectionServlet extends EventBaseServlet {
     /**
      * Election Finished
      * Receive new Primary server's POST, and update Primary Info locally
+     *
      * @param request
      * @param response
      * @throws IOException
@@ -87,16 +89,21 @@ public class NodeElectionServlet extends EventBaseServlet {
             throws IOException {
         PrintWriter out = response.getWriter();
         String body = extractPostRequestBody(request);
-        String HOST, PORT;
+        String host, port;
+        String VersionId;
         try {
-            JSONObject jsonobj = readJsonObj(body);
-            JSONObject item = (JSONObject) jsonobj.get("primary");
-            HOST = (String) item.get("host");
-            PORT = (String) item.get("port");
+//            JSONObject jsonobj = readJsonObj(body);
+//            JSONObject primary = (JSONObject) jsonobj.get("primary");
+//            VersionId = (String) jsonobj.get("vid");
+//            host = (String) primary.get("host");
+//            port = (String) primary.get("port");
+            edm.addNode(body);
             System.out.println("\nElection Finished");
-            System.out.println("\nNow primary is "+HOST+PORT);
-            edm.setPrimaryHost(HOST);
-            edm.setPrimaryPort(PORT);
+            System.out.println("\nNow primary is " + edm.getPrimaryJsonString());
+//            EVENT_HOST = host;
+//            EVENT_PORT = port;
+            System.out.println("New version ID is " + edm.getVersionID());
+//            edm.setVersionID(Integer.parseInt(VersionId));
             out.println();
         } catch (Exception e) {
             e.printStackTrace();

@@ -18,6 +18,7 @@ public class QueueWorker {
 
     /**
      * Create a thread keep the queue alive
+     *
      * @param edm
      */
     public QueueWorker(EventDataMap edm) {
@@ -34,9 +35,10 @@ public class QueueWorker {
     /**
      * Add a object into queue
      * Check if wake up
+     *
      * @param obj
      */
-    public  void enqueue(QueueObject obj) {
+    public void enqueue(QueueObject obj) {
 //        System.out.println("before enqueue");
         QueueLock.writeLock().lock();
 //        System.out.println("in enqueue");
@@ -44,14 +46,14 @@ public class QueueWorker {
             System.out.println("\nEnqueueing received vid is " + obj.getVersionID());
             System.out.println("Current local vid is " + edm.getVersionID());
             queue.put(obj.getVersionID(), obj);
-            System.out.println(queue.size());
+            System.out.println("Num of Items in the queue: " + queue.size());
             if (obj.getVersionID() == edm.getVersionID() + 1) {
                 System.out.println("Wake up " + obj.getVersionID());
 //                qh.wakeup();
                 countdowntimer.countDown();
 //                System.out.println("Now Wake up thread");
             }
-        }finally {
+        } finally {
             QueueLock.writeLock().unlock();
 //            System.out.println("after enqueue");
         }
@@ -60,22 +62,21 @@ public class QueueWorker {
     /**
      * Remove a object from queue
      */
-    public  void dequeue() {
+    public void dequeue() {
         QueueLock.writeLock().lock();
         try {
-            System.out.println(queue.size());
             queue.remove(queue.firstEntry().getKey());
-            System.out.println(queue.size());
-        }finally {
+        } finally {
             QueueLock.writeLock().unlock();
         }
     }
 
     /**
      * Ckeck if there is a object in the queue meet condition
+     *
      * @return
      */
-    public  Boolean ifSleep() {
+    public Boolean ifSleep() {
 //        System.out.println("begin ifsleep");
         QueueLock.readLock().lock();
 //        System.out.println("in ifsleep");
@@ -91,7 +92,7 @@ public class QueueWorker {
                     flag = true;
             }
             return flag;
-        }finally {
+        } finally {
             QueueLock.readLock().unlock();
 //            System.out.println("after ifsleep");
         }
@@ -104,6 +105,7 @@ public class QueueWorker {
                 worker();
             }
         }
+
         public synchronized void wakeup() {
             System.out.println(" notifyall");
             this.notifyAll();
@@ -115,6 +117,7 @@ public class QueueWorker {
             String eventname;
             long numtickets;
             long tickets;
+            String timestamp;
             try {
                 if (ifSleep()) {
 //                    this.wait();
@@ -131,25 +134,33 @@ public class QueueWorker {
                 System.out.println(obj.getBody().toString());
 
                 eventid = (Long) obj.getBody().get("eventid");
-                if (obj.getPath().equals("create")) {
-                    userid = (Long) obj.getBody().get("userid");
-                    eventname = (String) obj.getBody().get("eventname");
-                    numtickets = (Long) obj.getBody().get("numtickets");
-                    edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
-                    System.out.println("Create successfully");
+                timestamp = (String) obj.getBody().get("timestamp");
+                if (!edm.isTimeStampExist(timestamp)) {
+                    edm.addTimeStamp(timestamp, eventid);
+
+                    if (obj.getPath().equals("create")) {
+                        userid = (Long) obj.getBody().get("userid");
+                        eventname = (String) obj.getBody().get("eventname");
+                        numtickets = (Long) obj.getBody().get("numtickets");
+                        edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
+                        System.out.println("Create replication successfully");
 
 
-                } else if (obj.getPath().equals("purchase")) {
-                    tickets = (Long) obj.getBody().get("tickets");
-                    edm.purchaseTicket(eventid, tickets);
-                    System.out.println("Purchase successfully");
+                    } else if (obj.getPath().equals("purchase")) {
+                        tickets = (Long) obj.getBody().get("tickets");
+                        edm.purchaseTicket(eventid, tickets);
+                        System.out.println("Purchase replication successfully");
 
+                    }
+                }
+                else {
+                    System.out.println("TimeStamp already exist, will not add into list");
                 }
                 obj.setFinishFlag(true);
                 dequeue();
                 edm.getVersionIDIncreased();
                 countdowntimer = new CountDownLatch(1);
-                System.out.println("Writing finished");
+                System.out.println("Writing finished\n");
 
             } catch (Exception e) {
                 e.printStackTrace();

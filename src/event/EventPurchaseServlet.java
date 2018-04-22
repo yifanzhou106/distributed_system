@@ -10,8 +10,7 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static event.EventServer.USER_HOST;
-import static event.EventServer.USER_PORT;
+import static event.EventServer.*;
 
 /**
  * Purchase event tickets
@@ -20,7 +19,6 @@ public class EventPurchaseServlet extends EventBaseServlet {
     private EventDataMap edm;
     private QueueWorker qw;
     private Map<String, HashMap<String, String>> nodeMap;
-
 
 
     public EventPurchaseServlet(EventDataMap edm, QueueWorker qw) {
@@ -54,26 +52,35 @@ public class EventPurchaseServlet extends EventBaseServlet {
             userid = (Long) jsonobj.get("userid");
             tickets = (Long) jsonobj.get("tickets");
             timestamp = (String) jsonobj.get("timestamp");
+            Boolean isSuccess = false;
 
-            if (!edm.isTimeStampExist(timestamp)) {
-                edm.addTimeStamp(timestamp);
-                if (edm.isPrimary()) {
-                    Boolean isSuccess = edm.purchaseTicket(eventid, tickets);
+            if (edm.isPrimary()) {
+//                   String responseS;
+                if (!edm.isTimeStampExist(timestamp)) {
+                    edm.addTimeStamp(timestamp, eventid);
+                    isSuccess = edm.purchaseTicket(eventid, tickets);
+                }
+                VersionID = String.valueOf(edm.getVersionIDIncreased());
+                if (DEBUG) {
+                    if (VersionID.equals(DEBUG_NUM) && (PORT == 5650)) {
+                        System.out.println("Debug Mode");
+                        System.out.println(PORT);
+                        System.exit(-1);
+                    }
+                }
+                String path = "/purchase/" + eventid;
+                JSONObject json = new JSONObject();
+                json.put("eventid", eventid);
+                json.put("userid", userid);
+                json.put("tickets", tickets);
+                json.put("timestamp", timestamp);
+                json.put("vid", VersionID);
+                nodeMap = edm.getNodeMap();
+//                    threads.submit(new sendToReplic(response, nodeMap, json.toString(), path));
+                String key = HOST + PORT;
+                sendToReplic(response, nodeMap, json.toString(), path, key);
 
-                    String path = "/purchase/" + eventid;
-                    if (isSuccess) {
-                        VersionID = String.valueOf(edm.getVersionIDIncreased());
-                        JSONObject json = new JSONObject();
-                        json.put("eventid", eventid);
-                        json.put("userid", userid);
-                        json.put("tickets", tickets);
-                        json.put("timestamp", timestamp);
-                        json.put("vid", VersionID);
-                        nodeMap = edm.getNodeMap();
-                        threads.submit(new sendToReplic(response, nodeMap, json.toString(), path));
-
-//                        sendToReplic(response, nodeMap, json.toString(), path);
-
+                if (isSuccess) {
 //                        String url = "http://" + USER_HOST + ":" + USER_PORT + "/" + userid + "/tickets/add";  //Change to user server
 //                        response.setContentType("application/json");
 //                        json = new JSONObject();
@@ -81,22 +88,24 @@ public class EventPurchaseServlet extends EventBaseServlet {
 //                        json.put("tickets", tickets);
 //                        s = json.toString();
 //                        System.out.println(s);
-//                        String responseS;
 //                        responseS = sendPost(response, url, s);
-//                        out.println(responseS);
-                        System.out.println("Purchase Successfully\n");
+                    //                        out.println(responseS);
 
-                    } else {
-                        System.out.println("Purchase Unsuccessfully\n");
-                        response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
-                    }
+                    System.out.println("Purchase Successfully\n");
+
                 } else {
-                    QueueObject obj = new QueueObject("purchase", "post", body);
-                    qw.enqueue(obj);
-                    while (obj.getFinishFlag()) {
-                    }
+                    System.out.println("Purchase Unsuccessfully\n");
+                    response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);
+                }
+
+
+            } else {
+                QueueObject obj = new QueueObject("purchase", "post", body);
+                qw.enqueue(obj);
+                while (obj.getFinishFlag()) {
                 }
             }
+
 
         } catch (Exception e) {
             response.setStatus(HttpURLConnection.HTTP_BAD_REQUEST);

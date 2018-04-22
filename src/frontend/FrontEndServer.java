@@ -25,9 +25,9 @@ import java.net.URL;
 public class FrontEndServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 5700;
-    public static volatile int EVENT_PORT = 7000;
-    public static volatile String EVENT_HOST = "localhost";
+    public static int PORT = 5600;
+    public static String EVENT_PORT = "7000";
+    public static  String EVENT_HOST = "localhost";
     static int USER_PORT = 2000;
     static String USER_HOST = "mc01";
 
@@ -37,19 +37,22 @@ public class FrontEndServer {
         if (args.length > 0) {
             if (args[0].equals("-localhost")) {
                 HOST = args[1];
+                System.out.println(HOST);
             }
             if (args[2].equals("-localport")) {
                 PORT = Integer.parseInt(args[3]);
+                System.out.println(PORT);
             }
             if (args[4].equals("-primaryhost")) {
                 EVENT_HOST = args[5];
+                System.out.println(EVENT_HOST);
             }
-            if (args[6].equals("-primarport")) {
-                EVENT_PORT = Integer.parseInt(args[7]);
+            if (args[6].equals("-primaryport")) {
+                EVENT_PORT = args[7];
+                System.out.println(EVENT_PORT);
             }
         }
         Server server = new Server(PORT);
-
         fes.tellThemIamOn();
 
         ServletHandler handler = new ServletHandler();
@@ -99,9 +102,9 @@ public class FrontEndServer {
 
 //            HOST = InetAddress.getLocalHost().toString();
             String responseS;
-            HOST = "localhost";
+//            HOST = "localhost";
             String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/nodes/add/frontend";
-
+            System.out.println(url);
             String s;
             JSONObject obj = new JSONObject();
             JSONObject item = new JSONObject();

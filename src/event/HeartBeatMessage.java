@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import static event.EventServer.*;
 
 /**
  * Send HeartBeatMessage
@@ -31,45 +32,40 @@ public class HeartBeatMessage implements Runnable {
         try {
             while (!FLAG) {
                 checkAlive(edm, path);
-                Thread.sleep(3000);
+                Thread.sleep(1000);
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
     }
 
     private void checkAlive(EventDataMap edm, String path) {
         Map<String, HashMap<String, String>> nodeMap;
-        String host, port;
         if (edm.isPrimary()) {
             nodeMap = edm.getNodeMap();
             sendToReplic(nodeMap, path);
+            if (DEBUG)
             System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
             nodeMap = edm.getFrontEndMap();
             sendToReplic(nodeMap, path);
-            System.out.println("\nTotal alive Frontend Server List: " + edm.getFrontendNodeList().toString());
+            if (DEBUG)
+                System.out.println("\nTotal alive Frontend Server List: " + edm.getFrontendNodeList().toString());
         } else {
-            host = edm.getPrimaryHost();
-            port = edm.getPrimaryPort();
-            String url = "http://" + host + ":" + port + path;
+            String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + path;
             try {
                 sendGet(url);
             } catch (Exception e) {
                 System.out.println("\nCan not connect to primary, Begin election");
-                String followerHost, followerPort;
                 path = "/nodes/election";
-
-                followerHost = edm.getFollowerHost();
-                followerPort = edm.getFollowerPort();
-                url = "http://" + followerHost + ":" + followerPort + path;
+                url = "http://" + HOST + ":" + PORT + path;
                 try {
                     sendGet(url);
                 } catch (Exception ex) {
                     System.out.println("\ncannot connect itself");
                 }
             }
-            System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
+            if (DEBUG)
+                System.out.println("\nTotal alive Event Server List: " + edm.getEventNodeList().toString());
 
         }
     }
@@ -113,7 +109,7 @@ public class HeartBeatMessage implements Runnable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 }

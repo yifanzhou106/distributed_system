@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
  * @Author Yifan Zhou
  */
 public class test {
-    public static String PORT = "5600";
+    public static String PORT = "5610";
      public static String HOST = "localhost";
     public final ExecutorService threads = Executors.newFixedThreadPool(10);
 
@@ -42,7 +42,7 @@ public class test {
      * create threads
      */
     public void beginChat() {
-            for (int i = 0; i <10; i++)
+            for (int i = 0; i <110; i++)
                 threads.submit(new sendGetMessage());
 //        list();
 
@@ -62,10 +62,10 @@ public class test {
         @Override
         public void run () {
 
-//            create(5600);
-            create(5700);
+            create(5610);
+//            create(5700);
 
-//            purchase(5600, 6475);
+//            purchase(5600, 5365);
 //            purchase(5700, 5179);
 
 //            list();

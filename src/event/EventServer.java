@@ -25,11 +25,19 @@ import java.net.URL;
 public class EventServer {
     protected static Logger log = LogManager.getLogger();
     public static String HOST = "localhost";
-    public static int PORT = 8000;
+    public static int PORT = 7200;
+
+    public static String EVENT_HOST = "localhost";
+    public static String EVENT_PORT = "7200";
+
     static int USER_PORT = 2000;
+    public static Boolean DEBUG = false;
+    public static String DEBUG_NUM = "200";
+
     static String USER_HOST = "mc01";
     private EventDataMap edm;
     private QueueWorker qw;
+
     public EventServer() {
         edm = new EventDataMap();
         qw = new QueueWorker(edm);
@@ -46,11 +54,17 @@ public class EventServer {
                 PORT = Integer.parseInt(args[3]);
             }
             if (args[4].equals("-primaryhost")) {
-                es.edm.setPrimaryHost(args[5]);
+                EVENT_HOST = args[5];
             }
-            if (args[6].equals("-primarport")) {
-                es.edm.setPrimaryPort(args[7]);
+            if (args[6].equals("-primaryport")) {
+                EVENT_PORT = args[7];
             }
+            if (args.length > 8)
+                if (args[8].equals("-debug")) {
+                    DEBUG = true;
+                    DEBUG_NUM = args[9];
+
+                }
         }
         // Needs host,port input
         Server server = new Server(PORT);
@@ -60,8 +74,8 @@ public class EventServer {
         ServletHandler handler = new ServletHandler();
         server.setHandler(handler);
 
-        handler.addServletWithMapping(new ServletHolder(new EventCreaterServlet(es.edm,es.qw)), "/create");
-        handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm,es.qw)), "/purchase/*");
+        handler.addServletWithMapping(new ServletHolder(new EventCreaterServlet(es.edm, es.qw)), "/create");
+        handler.addServletWithMapping(new ServletHolder(new EventPurchaseServlet(es.edm, es.qw)), "/purchase/*");
         handler.addServletWithMapping(new ServletHolder(new FindNodeServlet(es.edm)), "/nodes");
         handler.addServletWithMapping(new ServletHolder(new AddFrontEndNodeServlet(es.edm)), "/nodes/add/frontend");
         handler.addServletWithMapping(new ServletHolder(new NodeElectionServlet(es.edm)), "/nodes/election");
@@ -88,12 +102,12 @@ public class EventServer {
     public void tellThemIamOn() {
         try {
 //            HOST = InetAddress.getLocalHost().toString();
-            HOST = "localhost";
-            edm.setFollowerHost(HOST);
-            edm.setFollowerPort(String.valueOf(PORT));
+//            HOST = "localhost";
+
 //            edm.addSingleNode(HOST,String.valueOf(PORT));
             String responseS;
-            String url = "http://localhost:7000/nodes";
+            String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/nodes";
+            System.out.println(url);
             String s;
             s = edm.getFollowerJsonString();
             responseS = sendReplicationPost(url, s);

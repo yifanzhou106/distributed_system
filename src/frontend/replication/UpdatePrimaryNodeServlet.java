@@ -42,10 +42,9 @@ public class UpdatePrimaryNodeServlet extends BaseServlet {
             JSONObject obj = readJsonObj(body);
             JSONObject item = (JSONObject) obj.get("primary");
             EVENT_HOST = (String) item.get("host");
-            EVENT_PORT = Integer.parseInt((String)item.get("port"));
-            System.out.println("Now new primary host is " + EVENT_HOST+EVENT_PORT);
-        }catch (Exception e)
-        {
+            EVENT_PORT = (String) item.get("port");
+            System.out.println("Now new primary host is " + EVENT_HOST + EVENT_PORT);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
