@@ -86,23 +86,8 @@ public class FrontEndServer {
 
     public void tellThemIamOn() {
         try {
-//            String url = "http://localhost:5600/nodes";
-//            String responseS;
-//            responseS = sendGet(url);
-//            String primeHost, primePort;
-//            JSONParser parser = new JSONParser();
-//            Object jsonObj = parser.parse(responseS);
-//            JSONObject jsonObject = (JSONObject) jsonObj;
-//            JSONObject prime = (JSONObject) jsonObject.get("primary");
-//            primeHost = (String) prime.get("host");
-//            primePort = (String) prime.get("port");
-//
-//            EVENT_HOST = primeHost;
-//            EVENT_PORT = Integer.parseInt(primePort);
 
-//            HOST = InetAddress.getLocalHost().toString();
             String responseS;
-//            HOST = "localhost";
             String url = "http://" + EVENT_HOST + ":" + EVENT_PORT + "/nodes/add/frontend";
             System.out.println(url);
             String s;
@@ -119,39 +104,6 @@ public class FrontEndServer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    // HTTP GET request
-    protected String sendGet(String url) throws Exception {
-
-
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-
-        //add request header
-        con.setRequestProperty("User-Agent", "HTTP/1.1");
-        con.setRequestProperty("Content-Type", "application/json");
-
-        int responseCode = con.getResponseCode();
-        System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer responseStr = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                responseStr.append(inputLine);
-            }
-
-            in.close();
-
-            return responseStr.toString();
-        }
-
-        return "";
     }
 
     // HTTP POST request

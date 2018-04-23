@@ -54,10 +54,9 @@ public class AddFrontEndNodeServlet extends EventBaseServlet {
                 nodeMap = edm.getNodeMap();
                 String key = HOST + PORT;
                 sendToReplic(response, nodeMap, body, path,key);
-                String responseS;
-                responseS = edm.getNodeList();
+
                 response.setContentType("application/json");
-                out.println(responseS);
+                out.println();
             }
         } catch (Exception e) {
             e.printStackTrace();

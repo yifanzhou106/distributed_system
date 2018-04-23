@@ -21,14 +21,7 @@ public class UpdatePrimaryNodeServlet extends BaseServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        PrintWriter out = response.getWriter();
-        JSONObject obj = new JSONObject();
-        JSONObject item = new JSONObject();
-        item.put("host", EVENT_HOST);
-        item.put("port", String.valueOf(EVENT_PORT));
-        obj.put("primary", item);
-        response.setContentType("application/json");
-        out.println(obj.toString());
+
 
     }
 

@@ -42,7 +42,7 @@ public class test {
      * create threads
      */
     public void beginChat() {
-            for (int i = 0; i <110; i++)
+            for (int i = 0; i <1000; i++)
                 threads.submit(new sendGetMessage());
 //        list();
 
@@ -63,10 +63,10 @@ public class test {
         public void run () {
 
             create(5610);
-//            create(5700);
+            create(5600);
 
-//            purchase(5600, 5365);
-//            purchase(5700, 5179);
+//            purchase(5610, 59378);
+//            purchase(5600, 59378);
 
 //            list();
 //            createPurchase ();

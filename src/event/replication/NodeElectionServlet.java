@@ -58,7 +58,10 @@ public class NodeElectionServlet extends EventBaseServlet {
                 }
             }
             if (canBePrimary) {
+                System.out.println("\n********************\n");
                 System.out.println("Election finished\nI'm Primary: " + HOST + PORT);
+                System.out.println("\n********************\n");
+
                 EVENT_HOST = HOST;
                 EVENT_PORT = String.valueOf(PORT);
                 String s = edm.getNodeList();
@@ -89,21 +92,16 @@ public class NodeElectionServlet extends EventBaseServlet {
             throws IOException {
         PrintWriter out = response.getWriter();
         String body = extractPostRequestBody(request);
-        String host, port;
-        String VersionId;
+
         try {
-//            JSONObject jsonobj = readJsonObj(body);
-//            JSONObject primary = (JSONObject) jsonobj.get("primary");
-//            VersionId = (String) jsonobj.get("vid");
-//            host = (String) primary.get("host");
-//            port = (String) primary.get("port");
             edm.addNode(body);
-            System.out.println("\nElection Finished");
+            System.out.println("\n********************\n");
+            System.out.println("Election Finished");
             System.out.println("\nNow primary is " + edm.getPrimaryJsonString());
-//            EVENT_HOST = host;
-//            EVENT_PORT = port;
+
             System.out.println("New version ID is " + edm.getVersionID());
-//            edm.setVersionID(Integer.parseInt(VersionId));
+            System.out.println("\n********************\n");
+
             out.println();
         } catch (Exception e) {
             e.printStackTrace();

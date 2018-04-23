@@ -45,7 +45,6 @@ public class EventCreaterServlet extends EventBaseServlet {
         try {
             PrintWriter out = response.getWriter();
             String body = extractPostRequestBody(request);
-//            System.out.println(body);
             JSONObject jsonobj = readJsonObj(body);
 
             long eventid;
@@ -62,7 +61,6 @@ public class EventCreaterServlet extends EventBaseServlet {
 
             JSONObject json = new JSONObject();
             if (edm.isPrimary()) {
-//                System.out.println("in is primary");
                 VersionID = String.valueOf(edm.getVersionIDIncreased());
                 if (DEBUG) {
                     if (VersionID.equals(DEBUG_NUM) && (PORT == 5650)) {
@@ -73,9 +71,9 @@ public class EventCreaterServlet extends EventBaseServlet {
                 }
                 if (!edm.isTimeStampExist(timestamp)) {
                     eventid = edm.createRandomEventId();
-//                    System.out.println("Add timestamp:"+ timestamp+ " eventid: "+eventid);
                     edm.addTimeStamp(timestamp, eventid);
                     edm.createNewEvent(eventid, eventname, userid, numtickets, 0);
+                    System.out.println("\nCreate Successfully");
                 } else {
                     System.out.println("\nRepeat Time Stamp " + body);
                     eventid = edm.getEventidFromTimestamp(timestamp);
@@ -88,27 +86,24 @@ public class EventCreaterServlet extends EventBaseServlet {
                 json.put("timestamp", timestamp);
                 json.put("vid", VersionID);
                 s = json.toString();
-//                System.out.println(s);
                 String path = "/create";
                 nodeMap = edm.getNodeMap();
                 String key = HOST + PORT;
+
                 sendToReplic(response, nodeMap, s, path, key);
 //                threads.submit(new sendToReplic(response, nodeMap, json.toString(), path, key));
 
                 response.setContentType("application/json");
                 json = new JSONObject();
                 json.put("eventid", eventid);
-                json.put("timestamp", timestamp);
                 body = json.toString();
 
             } else {
-//                System.out.println("\nReceive: " + body);
                 QueueObject obj = new QueueObject("create", "post", body);
                 qw.enqueue(obj);
                 while (obj.getFinishFlag()) {
                 }
             }
-//                System.out.println("Create a new event: " + body);
             out.println(body);
 
 

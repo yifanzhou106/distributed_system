@@ -148,12 +148,12 @@ public class QueueWorker {
 
                     } else if (obj.getPath().equals("purchase")) {
                         tickets = (Long) obj.getBody().get("tickets");
-                        edm.purchaseTicket(eventid, tickets);
-                        System.out.println("Purchase replication successfully");
+                        if (edm.purchaseTicket(eventid, tickets))
+                            System.out.println("Purchase replication successfully");
+                        else System.out.println("Purchase Unsuccessfully");
 
                     }
-                }
-                else {
+                } else {
                     System.out.println("TimeStamp already exist, will not add into list");
                 }
                 obj.setFinishFlag(true);

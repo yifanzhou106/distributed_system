@@ -55,7 +55,7 @@ public class EventPurchaseServlet extends EventBaseServlet {
             Boolean isSuccess = false;
 
             if (edm.isPrimary()) {
-//                   String responseS;
+                String responseS;
                 if (!edm.isTimeStampExist(timestamp)) {
                     edm.addTimeStamp(timestamp, eventid);
                     isSuccess = edm.purchaseTicket(eventid, tickets);
@@ -78,18 +78,19 @@ public class EventPurchaseServlet extends EventBaseServlet {
                 nodeMap = edm.getNodeMap();
 //                    threads.submit(new sendToReplic(response, nodeMap, json.toString(), path));
                 String key = HOST + PORT;
+
                 sendToReplic(response, nodeMap, json.toString(), path, key);
 
                 if (isSuccess) {
-//                        String url = "http://" + USER_HOST + ":" + USER_PORT + "/" + userid + "/tickets/add";  //Change to user server
-//                        response.setContentType("application/json");
-//                        json = new JSONObject();
-//                        json.put("eventid", eventid);
-//                        json.put("tickets", tickets);
-//                        s = json.toString();
-//                        System.out.println(s);
-//                        responseS = sendPost(response, url, s);
-                    //                        out.println(responseS);
+                    String url = "http://" + USER_HOST + ":" + USER_PORT + "/" + userid + "/tickets/add";  //Change to user server
+                    response.setContentType("application/json");
+                    json = new JSONObject();
+                    json.put("eventid", eventid);
+                    json.put("tickets", tickets);
+                    s = json.toString();
+                    System.out.println(s);
+                    responseS = sendPost(response, url, s);
+                    out.println(responseS);
 
                     System.out.println("Purchase Successfully\n");
 

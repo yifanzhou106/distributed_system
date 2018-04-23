@@ -32,7 +32,7 @@ public class HeartBeatMessage implements Runnable {
         try {
             while (!FLAG) {
                 checkAlive(edm, path);
-                Thread.sleep(1000);
+                Thread.sleep(2000);
             }
         } catch (InterruptedException e) {
         }
@@ -83,8 +83,6 @@ public class HeartBeatMessage implements Runnable {
         con.setRequestProperty("Content-Type", "application/json");
 
         int responseCode = con.getResponseCode();
-//        System.out.println("\nChecking Server: " + url);
-//        System.out.println("Response Code : " + responseCode);
 
         return responseCode;
     }
@@ -109,7 +107,6 @@ public class HeartBeatMessage implements Runnable {
                 }
             }
         } catch (Exception e) {
-//            e.printStackTrace();
         }
     }
 }
